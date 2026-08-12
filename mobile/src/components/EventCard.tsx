@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { OrgEvent } from '../types/orgEvent';
 import { formatEventDateRange } from '../utils/formatDate';
@@ -7,15 +7,19 @@ import { getEventImageUrl } from '../utils/eventImage';
 
 type EventCardProps = {
   event: OrgEvent;
+  onPress?: () => void;
 };
 
-export default function EventCard({ event }: EventCardProps) {
+export default function EventCard({ event, onPress }: EventCardProps) {
   const imageUrl = getEventImageUrl(event.imageUrl);
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(imageUrl) && !imageFailed;
 
   return (
-    <View style={styles.card}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+    >
       {showImage ? (
         <Image
           source={{ uri: imageUrl as string }}
@@ -40,7 +44,7 @@ export default function EventCard({ event }: EventCardProps) {
           {event.address || event.cityName}
         </Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -51,6 +55,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#e5e5e5',
+  },
+  cardPressed: {
+    opacity: 0.85,
   },
   image: {
     width: '100%',

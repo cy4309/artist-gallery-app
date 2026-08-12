@@ -1,7 +1,7 @@
 # Expo / React Native 學習筆記
 
 > 對應計畫：`CYC-ZINE-EXPO-DEVELOPMENT.md`  
-> 最後更新：2026-08-12  
+> 最後更新：2026-08-12（第五階段 App 端取得 Token ✅）  
 > 用途：日後複習。每完成一個階段就回來對一次表。
 
 ---
@@ -21,7 +21,7 @@
 | | Next.js Web | Expo App |
 |---|---|---|
 | 跑在哪 | 瀏覽器 | 手機原生（目前用 Expo Go） |
-| 入口 | `app/` 檔案路由 | `index.ts` → `App.tsx` |
+| 入口 | `app/` 檔案路由 | `expo-router/entry` → `app/_layout.tsx` |
 | 能不能包網站 | — | **不要用 WebView**，要真的 RN 畫面 |
 
 ### 路徑（最容易踩坑）
@@ -64,7 +64,7 @@ fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/org`)
 | `button` | `Pressable` | 用 `onPress`，不是 `onClick` |
 | `className` + Tailwind | `StyleSheet.create` | 沒有 CSS 檔、沒有 class |
 | 滾動長列表 `map()` | `FlatList` | 只渲染看得到的列，83 筆才不會卡 |
-| 頁面切換靠網址 | 現在靠 `useState` | 還不是正式路由（階段 4 才學） |
+| 頁面切換靠網址 | `router.push()` / `router.back()` | Expo Router 檔案路由（階段 4） |
 
 ### 資料與設定
 
@@ -97,7 +97,7 @@ Expo Go（手機）
       → 政府文化資料 API
 ```
 
-**對應檔案：** `mobile/App.tsx`、`mobile/index.ts`、`mobile/app.json`
+**對應檔案：** `app/_layout.tsx`、`app.json`、`package.json`（`main: expo-router/entry`）
 
 **複習口訣：** 不是把網站塞進 WebView；是重新用 RN 畫一套 UI，資料打同一組 API。
 
@@ -152,23 +152,9 @@ EXPO_PUBLIC_API_URL=https://cyc-zine.vercel.app
 
 ---
 
-## 階段 3：基本 App UI 🔄
+## 階段 3：基本 App UI ✅
 
 **學什麼：** 把「83 筆」變成可捲動列表。Home 是入口；Events 才真正顯示資料。
-
-### 畫面怎麼切（暫時）
-
-現在 **還沒裝** Expo Router。`App.tsx` 用 state 決定要顯示哪個畫面：
-
-```ts
-type Screen = 'home' | 'events';
-```
-
-| Next.js | 現在的 App | 之後（階段 4） |
-|---|---|---|
-| `/`、`/events` 是網址 | `screen === 'home'` | Expo Router 檔案路由 |
-
-這不是正式 Navigation，只是先搞懂：**一個 Screen = 一個元件**。
 
 ### 列表
 
@@ -216,31 +202,193 @@ type Screen = 'home' | 'events';
 | `src/screens/EventsScreen.tsx` | loading / error / empty / 列表 |
 | `src/components/EventCard.tsx` | 圖、名稱、日期、地點 |
 | `src/utils/formatDate.ts` | 日期顯示 |
-| `App.tsx` | 用 state 切 Home / Events |
 
 **複習口訣：** 相對路徑只存在「有網站 origin」的世界。手機上 API 和遠端圖片都要絕對 URL。
 
 ---
 
-## 階段 4：Navigation ⬜ 之後
+## 階段 4：Navigation ✅
 
-預計學：Expo Router（官方建議）取代現在的 `useState` 切畫面。
+**學什麼：** 用 **Expo Router** 取代 `useState` 切畫面。概念跟 Next.js App Router 很像：檔案 = 路由。
 
-| Next.js App Router | Expo Router（預計） |
+| Next.js App Router | Expo Router |
 |---|---|
-| `app/page.tsx` → `/` | `app/index.tsx` → Home |
-| `app/events/page.tsx` → `/events` | `app/events.tsx` → Events |
-| `useRouter().push()` | `router.push()` |
+| `app/page.tsx` → `/` | `app/index.tsx` → `/` |
+| `app/events/page.tsx` → `/events` | `app/events/index.tsx` → `/events` |
+| `app/events/[id]/page.tsx` → `/events/123` | `app/events/[id].tsx` → `/events/123` |
+| `useRouter().push('/events')` | `router.push('/events')` |
+| `router.back()` | `router.back()` |
+| `useParams()` | `useLocalSearchParams()` |
+| `app/layout.tsx` | `app/_layout.tsx` |
 
-目標結構：Home → Events → Event Detail。
+**跟第三階段的差別：**
+
+| 第三階段（暫時） | 第四階段（正式） |
+|---|---|
+| `App.tsx` 用 `useState` 切畫面 | `app/` 資料夾，檔案即路由 |
+| `onOpenEvents()` callback 傳下去 | `router.push('/events')` |
+| `onBack()` callback | `router.back()` |
+| 沒有網址概念 | 每個畫面有路徑，例如 `/events/123` |
+
+**目前路由結構：**
+
+```
+app/
+  _layout.tsx        ← Stack 導航 + 通知 handler
+  index.tsx          ← Home /
+  events/
+    index.tsx        ← /events
+    [id].tsx         ← /events/123
+  interviews/
+    index.tsx        ← /interviews（placeholder）
+    [id].tsx         ← /interviews/1
+  favorites.tsx      ← /favorites（placeholder）
+  settings.tsx       ← /settings（Push Token）
+```
+
+**畫面邏輯仍放 `src/screens/`**，`app/` 裡的檔案只做「路由入口」。這樣 UI 和路由分開，比較好維護。
+
+**導航 API：**
+
+```ts
+import { router } from 'expo-router';
+
+router.push('/events');           // 前往活動列表
+router.push(`/events/${actId}`); // 前往活動詳情
+router.back();                    // 返回上一頁
+```
+
+**讀路由參數（詳情頁）：**
+
+```ts
+import { useLocalSearchParams } from 'expo-router';
+
+const { id } = useLocalSearchParams<{ id: string }>();
+```
+
+**對應檔案：**
+
+| 檔案 | 職責 |
+|---|---|
+| `app/_layout.tsx` | Stack 導航、SafeAreaProvider |
+| `app/index.tsx` | Home 路由 |
+| `app/events/index.tsx` | Events 路由 |
+| `app/events/[id].tsx` | Event Detail 路由 |
+| `src/screens/EventDetailScreen.tsx` | 活動詳情畫面 |
+
+**複習口訣：** Expo Router = Next.js 的檔案路由，搬到手機上。`router.push` 取代 callback，`router.back` 取代自己寫返回。
+
+| `app/interviews/`、`app/favorites.tsx` | placeholder 頁 |
+| `app/settings.tsx` | 設定 / Push |
+| `src/screens/EventDetailScreen.tsx` | 活動詳情畫面 |
+
+**複習口訣：** Expo Router = Next.js 的檔案路由，搬到手機上。`router.push` 取代 callback，`router.back` 取代自己寫返回。
 
 ---
 
-## 階段 5：Push Notification ⬜ 之後
+## 階段 5：Push Notification
 
-預計學：Expo Notifications、Push Token。Token 要存到 Next API，不要寫死在 App。
+### 5a App 端取得 Token ✅
 
----
+**學什麼：** 手機 App 要收到推播，需要先向 Expo 註冊，取得 **Expo Push Token**。這串 token 就像這台手機的「推播地址」。
+
+| Next.js Web | Expo App |
+|---|---|
+| 瀏覽器 Web Push（不同機制） | Expo Push Token |
+| Service Worker | `expo-notifications` |
+| 後端直接打 FCM / APNs | 先打 Expo Push API（之後階段） |
+
+**已完成流程：**
+
+```
+App → 請求通知權限 → 取得 Expo Push Token → 顯示在設定頁
+```
+
+**流程步驟：**
+
+1. `Device.isDevice` — 模擬器拿不到 token，要實體手機
+2. `requestPermissionsAsync()` — 跳出系統通知權限
+3. `getExpoPushTokenAsync({ projectId })` — 需要 EAS `projectId`（`npx eas-cli init`）
+4. 把 token 顯示在 Settings 畫面
+
+**EAS 初始化（常見錯誤）：**
+
+```powershell
+# ❌ 會失敗
+npx eas init
+
+# ✅ 正確
+npx eas-cli init
+```
+
+**對應檔案：**
+
+| 檔案 | 職責 |
+|---|---|
+| `src/notifications/registerForPush.ts` | 權限 + 取 token |
+| `src/screens/SettingsScreen.tsx` | 顯示 token |
+| `app/settings.tsx` | 設定頁路由 |
+| `app/_layout.tsx` | 前景通知 handler |
+| `app.json` → `extra.eas.projectId` | EAS 專案 ID |
+
+**複習口訣：** Push Token 是手機的推播地址；先在 App 拿到並顯示。
+
+### 5b Backend 整合 ✅（App → Next.js）
+
+**學什麼：** Token 不能只留在手機上。要 POST 到 Next.js，後端才能記住「推播要發給誰」。
+
+| Next.js | Expo App |
+|---|---|
+| `Route Handler` 收 POST | `apiPost('/api/push/register', body)` |
+| 可從 cookie 知道登入 user | `userId` optional；未登入也能註冊 |
+| 轉送 GAS 儲存 | App 不直接碰 GAS |
+
+**已完成流程：**
+
+```
+Settings 按鈕
+  → 取得 Expo Push Token
+  → POST https://cyc-zine.vercel.app/api/push/register
+  → Next.js 驗證 token / platform
+  → 目前回 stub: true（GAS 尚未支援 registerPushToken）
+```
+
+綠色字「尚未寫入 GAS」= **API 有收到**，只是還沒存進試算表。這不是失敗。
+
+**Request body：**
+
+```json
+{
+  "userId": "可選",
+  "expoPushToken": "ExponentPushToken[...]",
+  "platform": "ios"
+}
+```
+
+**對應檔案：**
+
+| 位置 | 檔案 |
+|---|---|
+| App | `src/api/push.ts`、`src/api/client.ts`（`apiPost`） |
+| App | `src/screens/SettingsScreen.tsx` |
+| Next.js | `app/api/push/register/route.ts` |
+| Next.js | `src/types/push/register.ts` |
+| Next.js | `src/types/gas/actionConstants.ts`（`REGISTER_PUSH_TOKEN`） |
+
+**本機 vs production：**
+
+| App 打誰 | 同一 Wi-Fi？ |
+|---|---|
+| `http://192.168.x.x:3000`（本機） | 要 |
+| `https://cyc-zine.vercel.app` | 不要 |
+
+手機上不要用 `localhost`（那是手機自己）。改 `.env` 後要重開 Expo。
+
+**複習口訣：** 取 token 是 App 的事；收 token 是 Next.js 的事；真正存檔是 GAS 的事。
+
+### 5c 寫入 GAS ⬜ 之後
+
+Next.js 已會把 `action: registerPushToken` 轉給 GAS。下一步是在 Google Apps Script 新增這個 action：同一 token 不重複建立，`userId` 可為空。
 
 ## 階段 6：不做 Offline DB（原則）
 
@@ -274,3 +422,8 @@ Events 已有 loading / error / empty / 重試。之後再補 401、403、404、
 | 列表很卡 | 是不是用 `map()` 而不是 `FlatList` |
 | 文字爆紅 / 不顯示 | 是不是忘了包 `Text` |
 | 畫面被瀏海擋住 | 最外層有沒有 `SafeAreaView` |
+| `npx eas init` 失敗 | 要用 `npx eas-cli init` |
+| Push Token 找不到 projectId | 先跑 `npx eas-cli init`，重開 Expo |
+| Token 有但後端 404 | production 還沒這支 API；先本機測或 deploy |
+| 綠色 stub「尚未寫入 GAS」 | App→Next.js 已成功；GAS 還沒 `registerPushToken` |
+| Expo 打 `localhost` 失敗 | 改成電腦 LAN IP，例如 `http://192.168.1.23:3000` |

@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "cyc-zine",
     "ios": {
       "supportsTablet": true
     },
@@ -20,6 +21,17 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-notifications"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0dca09e7-e060-4bae-ab52-e2e51ecec5d0"
+      }
+    },
+    "owner": "chu_yuchen"
   }
 }

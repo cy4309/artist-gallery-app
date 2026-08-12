@@ -7,6 +7,8 @@ import {
   Text,
   View,
 } from 'react-native';
+import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getOrgData } from '../api/org';
 import { ApiError } from '../api/errors';
@@ -15,11 +17,7 @@ import { OrgEvent } from '../types/orgEvent';
 
 type Status = 'loading' | 'success' | 'error';
 
-type EventsScreenProps = {
-  onBack: () => void;
-};
-
-export default function EventsScreen({ onBack }: EventsScreenProps) {
+export default function EventsScreen() {
   const [status, setStatus] = useState<Status>('loading');
   const [events, setEvents] = useState<OrgEvent[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -45,9 +43,9 @@ export default function EventsScreen({ onBack }: EventsScreenProps) {
   }, [load]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={onBack} hitSlop={8}>
+        <Pressable onPress={() => router.back()} hitSlop={8}>
           <Text style={styles.back}>← 返回</Text>
         </Pressable>
         <Text style={styles.heading}>活動</Text>
@@ -84,11 +82,16 @@ export default function EventsScreen({ onBack }: EventsScreenProps) {
         <FlatList
           data={events}
           keyExtractor={(item) => String(item.actId)}
-          renderItem={({ item }) => <EventCard event={item} />}
+          renderItem={({ item }) => (
+            <EventCard
+              event={item}
+              onPress={() => router.push(`/events/${item.actId}`)}
+            />
+          )}
           contentContainerStyle={styles.list}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -102,7 +105,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 12,
   },
   back: {

@@ -12,9 +12,9 @@
 |------|------|------|
 | 1 | 建立 Expo App | ✅ 完成 |
 | 2 | API 共用 | ✅ 完成 |
-| 3 | 建立基本 App UI | 🔄 進行中 |
-| 4 | Navigation | ⬜ 未開始 |
-| 5 | Push Notification | ⬜ 未開始 |
+| 3 | 建立基本 App UI | ✅ 完成 |
+| 4 | Navigation | ✅ 完成 |
+| 5 | Push Notification | 🔄 進行中（5a ✅ · 5b App→Next.js ✅ · GAS 尚未寫入） |
 | 6 | 不做 Offline Database（原則） | — |
 | 7 | 環境變數 | ✅ 完成 |
 | 8 | 錯誤處理 | ⬜ 未開始 |

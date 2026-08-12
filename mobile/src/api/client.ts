@@ -3,13 +3,14 @@ import { ApiError } from './errors';
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 
-type ApiGetOptions = {
+type ApiRequestOptions = {
   timeoutMs?: number;
 };
 
-export async function apiGet<T>(
+async function requestJson<T>(
   path: string,
-  options?: ApiGetOptions
+  init: RequestInit,
+  options?: ApiRequestOptions
 ): Promise<T> {
   const url = `${env.apiUrl}${path}`;
   const controller = new AbortController();
@@ -18,9 +19,11 @@ export async function apiGet<T>(
 
   try {
     const response = await fetch(url, {
-      method: 'GET',
+      ...init,
       headers: {
         Accept: 'application/json',
+        ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+        ...init.headers,
       },
       signal: controller.signal,
     });
@@ -57,4 +60,26 @@ export async function apiGet<T>(
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+export async function apiGet<T>(
+  path: string,
+  options?: ApiRequestOptions
+): Promise<T> {
+  return requestJson<T>(path, { method: 'GET' }, options);
+}
+
+export async function apiPost<T>(
+  path: string,
+  body: unknown,
+  options?: ApiRequestOptions
+): Promise<T> {
+  return requestJson<T>(
+    path,
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+    options
+  );
 }
