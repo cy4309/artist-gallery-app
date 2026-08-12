@@ -1,10 +1,12 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-
-import ApiStatus from '../components/ApiStatus';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 type EntryItem = {
   title: string;
   description: string;
+};
+
+type HomeScreenProps = {
+  onOpenEvents: () => void;
 };
 
 const entries: EntryItem[] = [
@@ -22,7 +24,16 @@ const entries: EntryItem[] = [
   },
 ];
 
-export default function HomeScreen() {
+export default function HomeScreen({ onOpenEvents }: HomeScreenProps) {
+  function handlePress(title: string) {
+    if (title === 'Events') {
+      onOpenEvents();
+      return;
+    }
+
+    Alert.alert(title, '這個入口會在之後的階段接上。');
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -38,9 +49,7 @@ export default function HomeScreen() {
               styles.entryCard,
               pressed && styles.entryCardPressed,
             ]}
-            onPress={() => {
-              // 第四階段會加入 Navigation
-            }}
+            onPress={() => handlePress(entry.title)}
           >
             <Text style={styles.entryTitle}>{entry.title}</Text>
             <Text style={styles.entryDescription}>{entry.description}</Text>
@@ -48,9 +57,7 @@ export default function HomeScreen() {
         ))}
       </View>
 
-      <ApiStatus />
-
-      <Text style={styles.hint}>第二階段：API layer 已建立</Text>
+      <Text style={styles.hint}>第三階段：點 Events 看活動列表</Text>
     </View>
   );
 }

@@ -1,0 +1,18 @@
+# windows 全域設定
+# git config --global core.autocrlf false
+
+# 統一用 LF，避免 Windows 每次 add 都跳 CRLF 警告
+* text=auto eol=lf
+
+# 二進位檔不做換行轉換
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary

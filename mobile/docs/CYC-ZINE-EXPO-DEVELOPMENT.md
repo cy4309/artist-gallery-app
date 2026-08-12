@@ -1,7 +1,8 @@
 # CYC ZINE — Expo + React Native App 開發任務
 
 > 最後更新：2026-08-12  
-> 用途：記錄開發計畫、階段進度與學習重點，供之後追蹤與回顧。
+> 用途：記錄開發計畫、階段進度與學習重點，供之後追蹤與回顧。  
+> 複習筆記：[`EXPO-LEARNING-NOTES.md`](./EXPO-LEARNING-NOTES.md)
 
 ---
 
@@ -11,7 +12,7 @@
 |------|------|------|
 | 1 | 建立 Expo App | ✅ 完成 |
 | 2 | API 共用 | ✅ 完成 |
-| 3 | 建立基本 App UI | ⬜ 未開始 |
+| 3 | 建立基本 App UI | 🔄 進行中 |
 | 4 | Navigation | ⬜ 未開始 |
 | 5 | Push Notification | ⬜ 未開始 |
 | 6 | 不做 Offline Database（原則） | — |
