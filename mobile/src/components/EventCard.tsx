@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { OrgEvent } from '../types/orgEvent';
+import { colors, radius, space, type } from '../theme/tokens';
 import { formatEventDateRange } from '../utils/formatDate';
 import { getEventImageUrl } from '../utils/eventImage';
 
@@ -43,6 +44,9 @@ export default function EventCard({ event, onPress }: EventCardProps) {
         <Text style={styles.meta} numberOfLines={1}>
           {event.address || event.cityName}
         </Text>
+        {event.cityName ? (
+          <Text style={styles.city}>{event.cityName}</Text>
+        ) : null}
       </View>
     </Pressable>
   );
@@ -50,42 +54,51 @@ export default function EventCard({ event, onPress }: EventCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.card,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#e5e5e5',
+    borderWidth: 3,
+    borderColor: colors.border,
   },
   cardPressed: {
-    opacity: 0.85,
+    opacity: 0.88,
+    transform: [{ translateY: 1 }],
   },
   image: {
     width: '100%',
-    height: 160,
-    backgroundColor: '#eee',
+    aspectRatio: 16 / 9,
+    backgroundColor: colors.placeholder,
   },
   placeholder: {
     width: '100%',
-    height: 160,
-    backgroundColor: '#eee',
+    aspectRatio: 16 / 9,
+    backgroundColor: colors.placeholder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   placeholderText: {
-    fontSize: 13,
-    color: '#999',
+    fontSize: type.meta,
+    color: colors.textDim,
   },
   body: {
-    padding: 16,
-    gap: 6,
+    padding: space.lg,
+    gap: space.xs + 2,
   },
   title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111',
+    fontSize: type.body + 1,
+    fontWeight: '700',
+    color: colors.text,
+    lineHeight: 22,
   },
   meta: {
-    fontSize: 13,
-    color: '#666',
+    fontSize: type.caption,
+    color: colors.textMuted,
+  },
+  city: {
+    marginTop: space.xs,
+    fontSize: type.caption,
+    fontWeight: '600',
+    letterSpacing: 1,
+    color: colors.accentSoft,
   },
 });

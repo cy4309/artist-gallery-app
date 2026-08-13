@@ -11,7 +11,7 @@ type EntryItem = {
 const entries: EntryItem[] = [
   {
     title: 'Events',
-    description: '嘉義文化活動',
+    description: '展覽、音樂與創作',
     route: '/events',
   },
   {
@@ -31,7 +31,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Text style={styles.logo}>CYC ZINE</Text>
-        <Text style={styles.subtitle}>嘉義文化活動指南</Text>
+        <Text style={styles.subtitle}>探索文化故事</Text>
       </View>
 
       <View style={styles.entries}>

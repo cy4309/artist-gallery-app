@@ -11,12 +11,12 @@ type InterviewItem = {
 const interviews: InterviewItem[] = [
   {
     id: '1',
-    title: '嘉義市集幕後人物',
+    title: '創作者專訪（範例）',
     summary: '之後接上真實專訪資料',
   },
   {
     id: '2',
-    title: '在地創作者訪談',
+    title: '文化現場人物（範例）',
     summary: '之後接上真實專訪資料',
   },
 ];

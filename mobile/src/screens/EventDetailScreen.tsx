@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,10 +10,12 @@ import {
   View,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getOrgData } from '../api/org';
 import { ApiError } from '../api/errors';
+import { colors, radius, space, type } from '../theme/tokens';
 import { OrgEvent } from '../types/orgEvent';
 import { formatEventDateRange } from '../utils/formatDate';
 import { getEventImageUrl } from '../utils/eventImage';
@@ -66,6 +69,7 @@ export default function EventDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <StatusBar style="light" />
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={8}>
           <Text style={styles.back}>← 返回</Text>
@@ -76,7 +80,7 @@ export default function EventDetailScreen() {
 
       {status === 'loading' && (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#666" />
+          <ActivityIndicator size="large" color={colors.border} />
           <Text style={styles.centerText}>載入中…</Text>
         </View>
       )}
@@ -93,18 +97,24 @@ export default function EventDetailScreen() {
 
       {status === 'success' && event && (
         <ScrollView contentContainerStyle={styles.content}>
-          {showImage ? (
-            <Image
-              source={{ uri: imageUrl as string }}
-              style={styles.image}
-              resizeMode="cover"
-              onError={() => setImageFailed(true)}
-            />
-          ) : (
-            <View style={styles.placeholder}>
-              <Text style={styles.placeholderText}>無圖片</Text>
-            </View>
-          )}
+          <View style={styles.mediaFrame}>
+            {showImage ? (
+              <Image
+                source={{ uri: imageUrl as string }}
+                style={styles.image}
+                resizeMode="cover"
+                onError={() => setImageFailed(true)}
+              />
+            ) : (
+              <View style={styles.placeholder}>
+                <Text style={styles.placeholderText}>無圖片</Text>
+              </View>
+            )}
+          </View>
+
+          {event.cityName ? (
+            <Text style={styles.cityLabel}>{event.cityName}</Text>
+          ) : null}
 
           <Text style={styles.title}>{event.actName}</Text>
           <Text style={styles.meta}>
@@ -117,7 +127,15 @@ export default function EventDetailScreen() {
           ) : null}
 
           {event.website ? (
-            <Text style={styles.website}>官網：{event.website}</Text>
+            <Pressable
+              style={({ pressed }) => [
+                styles.linkButton,
+                pressed && styles.linkPressed,
+              ]}
+              onPress={() => Linking.openURL(event.website)}
+            >
+              <Text style={styles.linkText}>造訪官網 →</Text>
+            </Pressable>
           ) : null}
         </ScrollView>
       )}
@@ -128,98 +146,123 @@ export default function EventDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: colors.bg,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 12,
+    paddingHorizontal: space.xl,
+    paddingTop: space.sm,
+    paddingBottom: space.md,
   },
   back: {
-    fontSize: 16,
-    color: '#111',
+    fontSize: type.body,
+    color: colors.text,
     width: 72,
   },
   heading: {
-    fontSize: 18,
+    fontSize: type.heading,
     fontWeight: '700',
-    color: '#111',
+    letterSpacing: 2,
+    color: colors.text,
   },
   headerSpacer: {
     width: 72,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    gap: 12,
+    paddingHorizontal: space.xl,
+    paddingBottom: space.xxxl,
+    gap: space.md,
+  },
+  mediaFrame: {
+    borderRadius: radius.card,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   image: {
     width: '100%',
-    height: 220,
-    borderRadius: 12,
-    backgroundColor: '#eee',
+    aspectRatio: 16 / 9,
+    backgroundColor: colors.placeholder,
   },
   placeholder: {
     width: '100%',
-    height: 220,
-    borderRadius: 12,
-    backgroundColor: '#eee',
+    aspectRatio: 16 / 9,
+    backgroundColor: colors.placeholder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   placeholderText: {
-    fontSize: 13,
-    color: '#999',
+    fontSize: type.meta,
+    color: colors.textDim,
+  },
+  cityLabel: {
+    marginTop: space.sm,
+    fontSize: type.caption,
+    fontWeight: '700',
+    letterSpacing: 2,
+    color: colors.accentSoft,
+    textTransform: 'uppercase',
   },
   title: {
-    fontSize: 22,
+    fontSize: type.title,
     fontWeight: '700',
-    color: '#111',
+    color: colors.text,
+    lineHeight: 30,
   },
   meta: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: type.meta,
+    color: colors.textMuted,
   },
   description: {
-    marginTop: 8,
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#333',
+    marginTop: space.sm,
+    fontSize: type.body,
+    lineHeight: 24,
+    color: colors.text,
   },
-  website: {
-    fontSize: 13,
-    color: '#666',
+  linkButton: {
+    marginTop: space.md,
+    alignSelf: 'flex-start',
+    paddingVertical: space.sm,
+  },
+  linkPressed: {
+    opacity: 0.7,
+  },
+  linkText: {
+    fontSize: type.meta,
+    fontWeight: '600',
+    color: colors.accentSoft,
+    letterSpacing: 0.5,
   },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    gap: 12,
+    paddingHorizontal: space.xxl,
+    gap: space.md,
   },
   centerText: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: type.meta,
+    color: colors.textMuted,
     textAlign: 'center',
   },
   errorTitle: {
-    fontSize: 18,
+    fontSize: type.heading,
     fontWeight: '600',
-    color: '#111',
+    color: colors.text,
   },
   retryButton: {
-    marginTop: 8,
-    backgroundColor: '#111',
+    marginTop: space.sm,
+    backgroundColor: colors.text,
     borderRadius: 8,
-    paddingHorizontal: 20,
+    paddingHorizontal: space.xl,
     paddingVertical: 10,
   },
   retryText: {
-    color: '#fff',
-    fontSize: 14,
+    color: colors.bg,
+    fontSize: type.meta,
     fontWeight: '600',
   },
 });

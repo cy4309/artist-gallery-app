@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -8,19 +8,32 @@ import {
   View,
 } from 'react-native';
 import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getOrgData } from '../api/org';
 import { ApiError } from '../api/errors';
+import CityPicker, { ALL_CITIES } from '../components/CityPicker';
 import EventCard from '../components/EventCard';
+import { colors, space, type } from '../theme/tokens';
 import { OrgEvent } from '../types/orgEvent';
 
 type Status = 'loading' | 'success' | 'error';
+
+function uniqueCities(events: OrgEvent[]): string[] {
+  const set = new Set<string>();
+  for (const event of events) {
+    const name = event.cityName?.trim();
+    if (name) set.add(name);
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+}
 
 export default function EventsScreen() {
   const [status, setStatus] = useState<Status>('loading');
   const [events, setEvents] = useState<OrgEvent[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
+  const [selectedCity, setSelectedCity] = useState(ALL_CITIES);
 
   const load = useCallback(async () => {
     try {
@@ -42,21 +55,37 @@ export default function EventsScreen() {
     load();
   }, [load]);
 
+  const cities = useMemo(() => uniqueCities(events), [events]);
+
+  const filtered = useMemo(() => {
+    if (selectedCity === ALL_CITIES) return events;
+    return events.filter((event) => event.cityName?.trim() === selectedCity);
+  }, [events, selectedCity]);
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <StatusBar style="light" />
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={8}>
           <Text style={styles.back}>← 返回</Text>
         </Pressable>
         <Text style={styles.heading}>活動</Text>
         <Text style={styles.count}>
-          {status === 'success' ? `${events.length} 筆` : ' '}
+          {status === 'success' ? `${filtered.length} 筆` : ' '}
         </Text>
       </View>
 
+      {status === 'success' && events.length > 0 && (
+        <CityPicker
+          cities={cities}
+          selected={selectedCity}
+          onSelect={setSelectedCity}
+        />
+      )}
+
       {status === 'loading' && (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#666" />
+          <ActivityIndicator size="large" color={colors.border} />
           <Text style={styles.centerText}>載入活動中…</Text>
         </View>
       )}
@@ -78,9 +107,16 @@ export default function EventsScreen() {
         </View>
       )}
 
-      {status === 'success' && events.length > 0 && (
+      {status === 'success' && events.length > 0 && filtered.length === 0 && (
+        <View style={styles.center}>
+          <Text style={styles.errorTitle}>這個縣市暫無活動</Text>
+          <Text style={styles.centerText}>試試選「全部」或其他縣市</Text>
+        </View>
+      )}
+
+      {status === 'success' && filtered.length > 0 && (
         <FlatList
-          data={events}
+          data={filtered}
           keyExtractor={(item) => String(item.actId)}
           renderItem={({ item }) => (
             <EventCard
@@ -98,64 +134,66 @@ export default function EventsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: colors.bg,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 12,
+    paddingHorizontal: space.xl,
+    paddingTop: space.sm,
+    paddingBottom: space.md,
   },
   back: {
-    fontSize: 16,
-    color: '#111',
+    fontSize: type.body,
+    color: colors.text,
     width: 72,
   },
   heading: {
-    fontSize: 18,
+    fontSize: type.heading,
     fontWeight: '700',
-    color: '#111',
+    letterSpacing: 2,
+    color: colors.text,
   },
   count: {
     width: 72,
     textAlign: 'right',
-    fontSize: 13,
-    color: '#666',
+    fontSize: type.meta,
+    color: colors.textMuted,
   },
   list: {
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    gap: 12,
+    paddingHorizontal: space.xl,
+    paddingTop: space.lg,
+    paddingBottom: space.xxxl,
+    gap: space.md,
   },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    gap: 12,
+    paddingHorizontal: space.xxl,
+    gap: space.md,
   },
   centerText: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: type.meta,
+    color: colors.textMuted,
     textAlign: 'center',
   },
   errorTitle: {
-    fontSize: 18,
+    fontSize: type.heading,
     fontWeight: '600',
-    color: '#111',
+    color: colors.text,
   },
   retryButton: {
-    marginTop: 8,
-    backgroundColor: '#111',
+    marginTop: space.sm,
+    backgroundColor: colors.text,
     borderRadius: 8,
-    paddingHorizontal: 20,
+    paddingHorizontal: space.xl,
     paddingVertical: 10,
   },
   retryText: {
-    color: '#fff',
-    fontSize: 14,
+    color: colors.bg,
+    fontSize: type.meta,
     fontWeight: '600',
   },
 });

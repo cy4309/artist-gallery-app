@@ -3,8 +3,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const interviewTitles: Record<string, string> = {
-  '1': '嘉義市集幕後人物',
-  '2': '在地創作者訪談',
+  '1': '創作者專訪（範例）',
+  '2': '文化現場人物（範例）',
 };
 
 export default function InterviewDetailScreen() {
