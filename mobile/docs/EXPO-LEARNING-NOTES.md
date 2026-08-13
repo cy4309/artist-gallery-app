@@ -386,9 +386,43 @@ Settings 按鈕
 
 **複習口訣：** 取 token 是 App 的事；收 token 是 Next.js 的事；真正存檔是 GAS 的事。
 
-### 5c 寫入 GAS ⬜ 之後
+### 5c 寫入 GAS ✅
 
-Next.js 已會把 `action: registerPushToken` 轉給 GAS。下一步是在 Google Apps Script 新增這個 action：同一 token 不重複建立，`userId` 可為空。
+**學什麼：** Next.js 只是「門口」；真正記住 Token 的地方，在 **Google Apps Script + 試算表 `DEVICE_PUSH_TOKENS`**。
+
+| 存哪 | 結果 |
+|---|---|
+| 只存在手機畫面 | 關掉 App / 換機就沒了 |
+| 存在 GAS | 後端之後可讀出 Token 推播 |
+
+Token 格式：`ExponentPushToken[...]`（Expo Push 固定此前綴）。
+
+**複習口訣：** App 取 Token → Next 收 Token → GAS 存 Token。
+
+### 5d 發送測試推播 🔄
+
+**學什麼：** 存 Token 的目的是能推。後端呼叫 **Expo Push API**，不是 App 自己推給自己。
+
+```
+Settings「傳送測試推播」
+  → POST /api/push/send（Next.js）
+  → https://exp.host/--/api/v2/push/send
+  → 手機收到通知
+```
+
+| Next.js / 後端 | 不要 |
+|---|---|
+| 用 Token 當 `to` 發給 Expo | App 直接依賴前端偷偷推（架構上仍應走後端） |
+
+**對應檔案：**
+
+| 位置 | 檔案 |
+|---|---|
+| Next.js | `app/api/push/send/route.ts`（需 deploy） |
+| App | `src/api/push.ts` → `sendTestPush()` |
+| App | `SettingsScreen`「傳送測試推播」按鈕 |
+
+**測試技巧：** 前景有時不明顯，可先把 App 切到背景再按（或按完立刻切背景）。
 
 ## 階段 6：不做 Offline DB（原則）
 
@@ -425,5 +459,6 @@ Events 已有 loading / error / empty / 重試。之後再補 401、403、404、
 | `npx eas init` 失敗 | 要用 `npx eas-cli init` |
 | Push Token 找不到 projectId | 先跑 `npx eas-cli init`，重開 Expo |
 | Token 有但後端 404 | production 還沒這支 API；先本機測或 deploy |
-| 綠色 stub「尚未寫入 GAS」 | App→Next.js 已成功；GAS 還沒 `registerPushToken` |
+| Token 註冊 timeout 但 Sheet 有更新 | GAS 慢；寫入已成功，只是 App 先放棄等待。註冊逾時已改 45s |
+| GAS 貼完仍 stub | action 名稱是否 `registerPushToken`；Web App 是否部署新版本 |
 | Expo 打 `localhost` 失敗 | 改成電腦 LAN IP，例如 `http://192.168.1.23:3000` |

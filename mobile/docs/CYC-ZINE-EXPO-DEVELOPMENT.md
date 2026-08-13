@@ -2,7 +2,8 @@
 
 > 最後更新：2026-08-12  
 > 用途：記錄開發計畫、階段進度與學習重點，供之後追蹤與回顧。  
-> 複習筆記：[`EXPO-LEARNING-NOTES.md`](./EXPO-LEARNING-NOTES.md)
+> 複習筆記：[`EXPO-LEARNING-NOTES.md`](./EXPO-LEARNING-NOTES.md)  
+> GAS 貼上腳本：[`GAS-REGISTER-PUSH-TOKEN.md`](./GAS-REGISTER-PUSH-TOKEN.md)
 
 ---
 
@@ -14,7 +15,7 @@
 | 2 | API 共用 | ✅ 完成 |
 | 3 | 建立基本 App UI | ✅ 完成 |
 | 4 | Navigation | ✅ 完成 |
-| 5 | Push Notification | 🔄 進行中（5a ✅ · 5b App→Next.js ✅ · GAS 尚未寫入） |
+| 5 | Push Notification | 🔄 進行中（5a–5c ✅ · 5d 測試推播） |
 | 6 | 不做 Offline Database（原則） | — |
 | 7 | 環境變數 | ✅ 完成 |
 | 8 | 錯誤處理 | ⬜ 未開始 |

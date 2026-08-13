@@ -10,7 +10,7 @@ import {
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { registerPushToken } from '../api/push';
+import { registerPushToken, sendTestPush } from '../api/push';
 import { ApiError } from '../api/errors';
 import { registerForPushNotificationsAsync } from '../notifications/registerForPush';
 
@@ -18,7 +18,15 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
 
 function formatRegisterError(error: unknown): string {
   if (error instanceof ApiError && error.status === 404) {
-    return 'Token 已取得，但 production 還沒有 /api/push/register（404）。請改打本機 Next.js，或先 deploy frontend。';
+    return 'Token 已取得，但 production 還沒有 /api/push/register（404）。請先 deploy frontend。';
+  }
+
+  if (error instanceof ApiError && error.status === 502) {
+    return `Token 已取得，但 GAS 寫入失敗：${error.message}`;
+  }
+
+  if (error instanceof ApiError && error.code === 'TIMEOUT') {
+    return 'Token 已取得，但等後端回應逾時。若 Sheet 的 updatedAt 有更新，其實已註冊成功（GAS 較慢）。';
   }
 
   const apiMessage =
@@ -31,10 +39,14 @@ export default function SettingsScreen() {
   const [token, setToken] = useState('');
   const [message, setMessage] = useState('');
   const [registerMessage, setRegisterMessage] = useState('');
+  const [sendStatus, setSendStatus] = useState<Status>('idle');
+  const [sendMessage, setSendMessage] = useState('');
 
   async function handleRegister() {
     setStatus('loading');
     setRegisterMessage('');
+    setSendMessage('');
+    setSendStatus('idle');
 
     const result = await registerForPushNotificationsAsync();
 
@@ -69,6 +81,39 @@ export default function SettingsScreen() {
     }
   }
 
+  async function handleSendTest() {
+    if (!token) return;
+
+    setSendStatus('loading');
+    setSendMessage('');
+
+    try {
+      const response = await sendTestPush({
+        expoPushToken: token,
+        title: 'CYC ZINE',
+        body: '測試推播成功！你的裝置已能收到通知。',
+      });
+
+      if (!response.success) {
+        setSendMessage(response.error || '推播失敗');
+        setSendStatus('error');
+        return;
+      }
+
+      setSendMessage('已送出測試推播。若沒跳出，請把 App 切到背景再試。');
+      setSendStatus('success');
+    } catch (error) {
+      const apiMessage =
+        error instanceof ApiError ? error.message : 'Unknown error';
+      setSendMessage(
+        error instanceof ApiError && error.status === 404
+          ? 'production 還沒有 /api/push/send，請先 deploy frontend。'
+          : apiMessage
+      );
+      setSendStatus('error');
+    }
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
@@ -82,8 +127,8 @@ export default function SettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Push Notification</Text>
         <Text style={styles.sectionBody}>
-          取得 Expo Push Token 後，自動 POST 到 Next.js{' '}
-          <Text style={styles.mono}>/api/push/register</Text> 儲存。
+          1. 取得並註冊 Token 到後端{'\n'}
+          2. 用同一 Token 請後端打 Expo Push API，發一則測試推播
         </Text>
 
         <Pressable
@@ -113,6 +158,32 @@ export default function SettingsScreen() {
             </Text>
             {registerMessage ? (
               <Text style={styles.registerMessage}>{registerMessage}</Text>
+            ) : null}
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                pressed && styles.buttonPressed,
+                sendStatus === 'loading' && styles.buttonDisabled,
+              ]}
+              onPress={handleSendTest}
+              disabled={sendStatus === 'loading'}
+            >
+              {sendStatus === 'loading' ? (
+                <ActivityIndicator color="#111" />
+              ) : (
+                <Text style={styles.secondaryButtonText}>傳送測試推播</Text>
+              )}
+            </Pressable>
+
+            {sendMessage ? (
+              <Text
+                style={
+                  sendStatus === 'error' ? styles.error : styles.registerMessage
+                }
+              >
+                {sendMessage}
+              </Text>
             ) : null}
           </View>
         ) : null}
@@ -165,15 +236,19 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: '#666',
   },
-  mono: {
-    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace' }),
-    fontSize: 13,
-    color: '#333',
-  },
   button: {
     marginTop: 8,
     backgroundColor: '#111',
     borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  secondaryButton: {
+    marginTop: 8,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#111',
     paddingVertical: 12,
     alignItems: 'center',
   },
@@ -185,6 +260,11 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  secondaryButtonText: {
+    color: '#111',
     fontSize: 15,
     fontWeight: '600',
   },
