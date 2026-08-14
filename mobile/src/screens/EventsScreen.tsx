@@ -58,9 +58,6 @@ export default function EventsScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Text style={styles.back}>← 返回</Text>
-        </Pressable>
         <Text style={styles.heading}>活動</Text>
         <Text style={styles.count}>
           {status === 'success' ? `${filtered.length} 筆` : ' '}
@@ -133,13 +130,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: space.xl,
-    paddingTop: space.sm,
-    paddingBottom: space.md,
-  },
-  back: {
-    fontSize: type.body,
-    color: colors.text,
-    width: 72,
+    paddingTop: space.lg,
+    paddingBottom: space.lg,
   },
   heading: {
     fontSize: type.heading,
@@ -157,7 +149,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.xl,
     paddingTop: space.lg,
     paddingBottom: space.xxxl,
-    gap: space.md,
+    gap: space.xl,
   },
   center: {
     flex: 1,

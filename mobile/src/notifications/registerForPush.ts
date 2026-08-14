@@ -3,9 +3,25 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+export const EVENT_REMINDER_CHANNEL = 'event-reminders';
+
 export type PushRegistrationResult =
   | { ok: true; token: string }
   | { ok: false; message: string };
+
+export async function ensureNotificationChannels(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+
+  await Notifications.setNotificationChannelAsync('default', {
+    name: 'default',
+    importance: Notifications.AndroidImportance.DEFAULT,
+  });
+
+  await Notifications.setNotificationChannelAsync(EVENT_REMINDER_CHANNEL, {
+    name: '活動提醒',
+    importance: Notifications.AndroidImportance.DEFAULT,
+  });
+}
 
 function getProjectId(): string | undefined {
   return (
@@ -22,12 +38,7 @@ export async function registerForPushNotificationsAsync(): Promise<PushRegistrat
     };
   }
 
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.MAX,
-    });
-  }
+  await ensureNotificationChannels();
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;

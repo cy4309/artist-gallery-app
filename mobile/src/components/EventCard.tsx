@@ -101,8 +101,8 @@ const styles = StyleSheet.create({
     color: colors.textDim,
   },
   body: {
-    padding: space.lg,
-    gap: space.xs + 2,
+    padding: space.xl,
+    gap: space.sm,
   },
   title: {
     fontSize: type.body + 1,

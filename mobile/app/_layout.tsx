@@ -6,6 +6,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '../src/auth/AuthContext';
 import AccountBar from '../src/components/AccountBar';
+import NotificationOpenHandler from '../src/notifications/NotificationOpenHandler';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -33,6 +34,7 @@ export default function RootLayout() {
             />
           </View>
         </View>
+        <NotificationOpenHandler />
         <StatusBar style="light" />
       </AuthProvider>
     </SafeAreaProvider>

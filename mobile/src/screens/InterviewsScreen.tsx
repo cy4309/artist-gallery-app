@@ -25,11 +25,7 @@ export default function InterviewsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Text style={styles.back}>← 返回</Text>
-        </Pressable>
         <Text style={styles.heading}>專訪</Text>
-        <View style={styles.headerSpacer} />
       </View>
 
       <View style={styles.list}>
@@ -57,34 +53,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafafa',
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 12,
-  },
-  back: {
-    fontSize: 16,
-    color: '#111',
-    width: 72,
+    paddingTop: 16,
+    paddingBottom: 16,
   },
   heading: {
     fontSize: 18,
     fontWeight: '700',
     color: '#111',
   },
-  headerSpacer: {
-    width: 72,
-  },
   list: {
     paddingHorizontal: 20,
-    gap: 12,
+    gap: 20,
   },
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 20,
+    paddingVertical: 24,
+    paddingHorizontal: 22,
     borderWidth: 1,
     borderColor: '#e5e5e5',
   },

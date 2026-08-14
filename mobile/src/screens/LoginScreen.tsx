@@ -26,7 +26,7 @@ function parseSessionFromUrl(url: string): User | null {
 }
 
 export default function LoginScreen() {
-  const { completeLogin, cancelPendingFavorite } = useAuth();
+  const { completeLogin } = useAuth();
   const [errorMessage, setErrorMessage] = useState('');
   const [busy, setBusy] = useState<'google' | 'line' | null>(null);
 
@@ -58,20 +58,10 @@ export default function LoginScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <Pressable
-          onPress={() => {
-            cancelPendingFavorite();
-            router.back();
-          }}
-          hitSlop={8}
-        >
-          <Text style={styles.back}>← 返回</Text>
-        </Pressable>
         <Text style={styles.heading}>登入</Text>
-        <View style={styles.headerSpacer} />
       </View>
 
       <View style={styles.body}>
@@ -114,26 +104,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: space.xl,
-    paddingTop: space.sm,
-    paddingBottom: space.md,
-  },
-  back: {
-    fontSize: type.body,
-    color: colors.text,
-    width: 72,
+    paddingTop: space.lg,
+    paddingBottom: space.lg,
   },
   heading: {
     fontSize: type.heading,
     fontWeight: '700',
     letterSpacing: 2,
     color: colors.text,
-  },
-  headerSpacer: {
-    width: 72,
   },
   body: {
     paddingHorizontal: space.xxl,

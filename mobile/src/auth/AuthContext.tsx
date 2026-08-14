@@ -16,6 +16,12 @@ import {
   FavoriteExtra,
 } from '../api/favorites';
 import { ApiError } from '../api/errors';
+import {
+  cancelAllEventReminders,
+  onEventFavorited,
+  onEventUnfavorited,
+  syncEventReminders,
+} from '../notifications/eventReminders';
 import { User } from '../types/user';
 import {
   clearUser,
@@ -52,10 +58,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
-  const reloadFavorites = useCallback(async () => {
+  const reloadFavorites = useCallback(async (userId?: string) => {
     try {
       const list = await fetchFavoriteList();
       setFavoriteIds(list.map((item) => String(item.eventId)));
+      await syncEventReminders(
+        list.map((item) => ({
+          eventId: String(item.eventId),
+          eventTitle: item.eventTitle,
+          eventStartDate: item.eventStartDate,
+        })),
+        userId
+      );
     } catch {
       setFavoriteIds([]);
     }
@@ -76,12 +90,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               ? prev
               : [...prev, pending.eventId]
           );
+          await onEventFavorited(
+            {
+              eventId: pending.eventId,
+              eventTitle: pending.extra?.eventTitle,
+              eventStartDate: pending.extra?.eventStartDate,
+            },
+            nextUser.id
+          );
         } catch {
           // 登入已成功；收藏失敗時使用者可再按一次
         }
       }
 
-      await reloadFavorites();
+      await reloadFavorites(nextUser.id);
     },
     [reloadFavorites]
   );
@@ -93,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (cancelled) return;
       setUser(stored);
       if (stored) {
-        await reloadFavorites();
+        await reloadFavorites(stored.id);
       }
       setLoading(false);
     })();
@@ -106,6 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await clearUser();
     setUser(null);
     setFavoriteIds([]);
+    await cancelAllEventReminders();
   }, []);
 
   const startLoginToFavorite = useCallback(
@@ -140,6 +163,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         await toggleFavorite(eventId, extra);
+        if (wasFavorite) {
+          await onEventUnfavorited(eventId);
+        } else {
+          await onEventFavorited(
+            {
+              eventId,
+              eventTitle: extra?.eventTitle,
+              eventStartDate: extra?.eventStartDate,
+            },
+            user.id
+          );
+        }
       } catch (error) {
         setFavoriteIds((prev) =>
           wasFavorite ? [...prev, eventId] : prev.filter((id) => id !== eventId)

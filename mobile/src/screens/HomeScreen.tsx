@@ -56,13 +56,6 @@ export default function HomeScreen() {
           </Pressable>
         ))}
       </View>
-
-      <Pressable
-        style={({ pressed }) => [styles.settingsLink, pressed && styles.settingsPressed]}
-        onPress={() => router.push('/settings')}
-      >
-        <Text style={styles.settingsText}>設定 · Push Notification</Text>
-      </Pressable>
     </SafeAreaView>
   );
 }
@@ -90,12 +83,13 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   entries: {
-    gap: 12,
+    gap: 20,
   },
   entryCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 20,
+    paddingVertical: 24,
+    paddingHorizontal: 22,
     borderWidth: 1,
     borderColor: '#e5e5e5',
   },
@@ -108,20 +102,9 @@ const styles = StyleSheet.create({
     color: '#111',
   },
   entryDescription: {
-    marginTop: 4,
+    marginTop: 8,
     fontSize: 14,
-    color: '#666',
-  },
-  settingsLink: {
-    marginTop: 'auto',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  settingsPressed: {
-    opacity: 0.7,
-  },
-  settingsText: {
-    fontSize: 14,
+    lineHeight: 20,
     color: '#666',
   },
 });

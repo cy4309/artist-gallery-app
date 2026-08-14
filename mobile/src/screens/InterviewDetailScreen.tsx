@@ -1,5 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { StyleSheet, Text, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const interviewTitles: Record<string, string> = {
@@ -14,11 +14,7 @@ export default function InterviewDetailScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Text style={styles.back}>← 返回</Text>
-        </Pressable>
         <Text style={styles.heading}>專訪詳情</Text>
-        <View style={styles.headerSpacer} />
       </View>
 
       <View style={styles.content}>
@@ -43,25 +39,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafafa',
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 12,
-  },
-  back: {
-    fontSize: 16,
-    color: '#111',
-    width: 72,
+    paddingTop: 16,
+    paddingBottom: 16,
   },
   heading: {
     fontSize: 18,
     fontWeight: '700',
     color: '#111',
-  },
-  headerSpacer: {
-    width: 72,
   },
   content: {
     paddingHorizontal: 20,
