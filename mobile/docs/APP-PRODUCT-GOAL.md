@@ -91,7 +91,7 @@
 |---|---|---|
 | 2 | Home | 大標、主視覺、進活動入口 |
 | 3 | Interviews | 列表 + 詳情對齊網站 |
-| 4 | Favorites / Auth | 接現有 API，需登入流程 |
+| 4 | Favorites / Auth | 收藏沿用現有 API；登入新增 `POST /api/auth/app-login`（需你同意） |
 | — | 錯誤處理／Push 深化 | 穿插，不擋主線 |
 
 ---

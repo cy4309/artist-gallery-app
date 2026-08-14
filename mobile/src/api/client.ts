@@ -1,5 +1,6 @@
 import { env } from '../config/env';
 import { ApiError } from './errors';
+import { getSessionCookieHeader } from '../auth/session';
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 
@@ -23,6 +24,7 @@ async function requestJson<T>(
       headers: {
         Accept: 'application/json',
         ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+        ...getSessionCookieHeader(),
         ...init.headers,
       },
       signal: controller.signal,

@@ -20,6 +20,7 @@ import { OrgEvent } from '../types/orgEvent';
 import { formatEventDateRange } from '../utils/formatDate';
 import { getEventImageUrl } from '../utils/eventImage';
 import { eventCityName } from '../utils/city';
+import FavoriteButton from '../components/FavoriteButton';
 
 type Status = 'loading' | 'success' | 'error';
 
@@ -70,7 +71,7 @@ export default function EventDetailScreen() {
   const city = event ? eventCityName(event) : null;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar style="light" />
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={8}>
@@ -112,6 +113,19 @@ export default function EventDetailScreen() {
                 <Text style={styles.placeholderText}>無圖片</Text>
               </View>
             )}
+            <View style={styles.heart}>
+              <FavoriteButton
+                eventId={String(event.actId)}
+                extra={{
+                  eventTitle: event.actName,
+                  eventStartDate: event.startTime,
+                  eventEndDate: event.endTime,
+                  eventLocation: event.address,
+                  eventUrl: event.website,
+                  imageUrl: imageUrl ?? undefined,
+                }}
+              />
+            </View>
           </View>
 
           {city ? <Text style={styles.cityLabel}>{city}</Text> : null}
@@ -181,6 +195,12 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: colors.border,
     backgroundColor: colors.surface,
+  },
+  heart: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 2,
   },
   image: {
     width: '100%',

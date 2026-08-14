@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import FavoriteButton from './FavoriteButton';
 import { OrgEvent } from '../types/orgEvent';
 import { colors, radius, space, type } from '../theme/tokens';
 import { eventCityName } from '../utils/city';
@@ -35,6 +36,19 @@ export default function EventCard({ event, onPress }: EventCardProps) {
           <Text style={styles.placeholderText}>無圖片</Text>
         </View>
       )}
+      <View style={styles.heart}>
+        <FavoriteButton
+          eventId={String(event.actId)}
+          extra={{
+            eventTitle: event.actName,
+            eventStartDate: event.startTime,
+            eventEndDate: event.endTime,
+            eventLocation: event.address,
+            eventUrl: event.website,
+            imageUrl: imageUrl ?? undefined,
+          }}
+        />
+      </View>
 
       <View style={styles.body}>
         <Text style={styles.title} numberOfLines={2}>
@@ -59,6 +73,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 3,
     borderColor: colors.border,
+  },
+  heart: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 2,
   },
   cardPressed: {
     opacity: 0.88,

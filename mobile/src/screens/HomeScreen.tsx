@@ -2,13 +2,15 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useAuth } from '../auth/AuthContext';
+
 type EntryItem = {
   title: string;
   description: string;
   route: '/events' | '/interviews' | '/favorites';
 };
 
-const entries: EntryItem[] = [
+const allEntries: EntryItem[] = [
   {
     title: 'Events',
     description: '展覽、音樂與創作',
@@ -27,8 +29,13 @@ const entries: EntryItem[] = [
 ];
 
 export default function HomeScreen() {
+  const { user } = useAuth();
+  const entries = user
+    ? allEntries
+    : allEntries.filter((entry) => entry.route !== '/favorites');
+
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.header}>
         <Text style={styles.logo}>CYC ZINE</Text>
         <Text style={styles.subtitle}>探索文化故事</Text>

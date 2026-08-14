@@ -55,7 +55,7 @@ export default function EventsScreen() {
   }, [events, selectedCity]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar style="light" />
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={8}>

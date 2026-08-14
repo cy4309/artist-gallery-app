@@ -24,7 +24,9 @@
     },
     "plugins": [
       "expo-router",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "extra": {
       "router": {},

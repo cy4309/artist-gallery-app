@@ -23,7 +23,7 @@ const interviews: InterviewItem[] = [
 
 export default function InterviewsScreen() {
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={8}>
           <Text style={styles.back}>← 返回</Text>
