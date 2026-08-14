@@ -99,5 +99,6 @@
 ## 實作備註（P1）
 
 - Theme：`mobile/src/theme/tokens.ts`（對齊網站 primary / gray / blue、深色底）
-- 縣市選擇：`CityPicker`（點開搜尋／列表，不再橫滑 chips）+ App 端 filter `/api/org`
+- 縣市選擇：`CityPicker`（點開搜尋／列表，不再橫滑 chips）
+- 選項只顯示縣市（台北市、新北市…），不列鄉鎮區；排序固定北到南
 - 列表／詳情：粗邊框、16:9 圖、縣市標籤

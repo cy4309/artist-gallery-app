@@ -19,6 +19,7 @@ import { colors, radius, space, type } from '../theme/tokens';
 import { OrgEvent } from '../types/orgEvent';
 import { formatEventDateRange } from '../utils/formatDate';
 import { getEventImageUrl } from '../utils/eventImage';
+import { eventCityName } from '../utils/city';
 
 type Status = 'loading' | 'success' | 'error';
 
@@ -66,6 +67,7 @@ export default function EventDetailScreen() {
 
   const imageUrl = event ? getEventImageUrl(event.imageUrl) : null;
   const showImage = Boolean(imageUrl) && !imageFailed;
+  const city = event ? eventCityName(event) : null;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -112,9 +114,7 @@ export default function EventDetailScreen() {
             )}
           </View>
 
-          {event.cityName ? (
-            <Text style={styles.cityLabel}>{event.cityName}</Text>
-          ) : null}
+          {city ? <Text style={styles.cityLabel}>{city}</Text> : null}
 
           <Text style={styles.title}>{event.actName}</Text>
           <Text style={styles.meta}>

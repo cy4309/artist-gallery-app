@@ -3,6 +3,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { OrgEvent } from '../types/orgEvent';
 import { colors, radius, space, type } from '../theme/tokens';
+import { eventCityName } from '../utils/city';
 import { formatEventDateRange } from '../utils/formatDate';
 import { getEventImageUrl } from '../utils/eventImage';
 
@@ -15,6 +16,7 @@ export default function EventCard({ event, onPress }: EventCardProps) {
   const imageUrl = getEventImageUrl(event.imageUrl);
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(imageUrl) && !imageFailed;
+  const city = eventCityName(event);
 
   return (
     <Pressable
@@ -44,9 +46,7 @@ export default function EventCard({ event, onPress }: EventCardProps) {
         <Text style={styles.meta} numberOfLines={1}>
           {event.address || event.cityName}
         </Text>
-        {event.cityName ? (
-          <Text style={styles.city}>{event.cityName}</Text>
-        ) : null}
+        {city ? <Text style={styles.city}>{city}</Text> : null}
       </View>
     </Pressable>
   );

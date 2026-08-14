@@ -17,17 +17,9 @@ import CityPicker, { ALL_CITIES } from '../components/CityPicker';
 import EventCard from '../components/EventCard';
 import { colors, space, type } from '../theme/tokens';
 import { OrgEvent } from '../types/orgEvent';
+import { eventCityName, uniqueCityNames } from '../utils/city';
 
 type Status = 'loading' | 'success' | 'error';
-
-function uniqueCities(events: OrgEvent[]): string[] {
-  const set = new Set<string>();
-  for (const event of events) {
-    const name = event.cityName?.trim();
-    if (name) set.add(name);
-  }
-  return Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
-}
 
 export default function EventsScreen() {
   const [status, setStatus] = useState<Status>('loading');
@@ -55,11 +47,11 @@ export default function EventsScreen() {
     load();
   }, [load]);
 
-  const cities = useMemo(() => uniqueCities(events), [events]);
+  const cities = useMemo(() => uniqueCityNames(events), [events]);
 
   const filtered = useMemo(() => {
     if (selectedCity === ALL_CITIES) return events;
-    return events.filter((event) => event.cityName?.trim() === selectedCity);
+    return events.filter((event) => eventCityName(event) === selectedCity);
   }, [events, selectedCity]);
 
   return (
