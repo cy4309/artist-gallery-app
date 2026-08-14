@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: space.xl,
-    paddingVertical: space.md,
+    paddingVertical: space.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderMuted,
     backgroundColor: colors.bg,
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     minWidth: 72,
   },
   backBtn: {
-    paddingVertical: space.sm,
+    paddingVertical: 4,
     paddingRight: space.md,
     marginLeft: -space.sm,
   },
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   actionBtn: {
-    paddingVertical: space.sm,
+    paddingVertical: 4,
     paddingLeft: space.sm,
     marginRight: -space.sm,
   },

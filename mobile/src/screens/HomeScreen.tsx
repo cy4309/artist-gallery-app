@@ -1,8 +1,11 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../auth/AuthContext';
+import { env } from '../config/env';
+import { colors, radius, space, type } from '../theme/tokens';
 
 type EntryItem = {
   title: string;
@@ -10,21 +13,23 @@ type EntryItem = {
   route: '/events' | '/interviews' | '/favorites';
 };
 
+const COVER_IMAGE = `${env.apiUrl}/images/qingshan-king-festival-1.jpg`;
+
 const allEntries: EntryItem[] = [
   {
-    title: 'Events',
+    title: '活動',
     description: '展覽、音樂與創作',
     route: '/events',
   },
   {
-    title: 'Interviews',
-    description: '人物專訪',
-    route: '/interviews',
-  },
-  {
-    title: 'Favorites',
+    title: '收藏',
     description: '收藏的活動',
     route: '/favorites',
+  },
+  {
+    title: '專欄',
+    description: '人物專訪',
+    route: '/interviews',
   },
 ];
 
@@ -35,76 +40,126 @@ export default function HomeScreen() {
     : allEntries.filter((entry) => entry.route !== '/favorites');
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <View style={styles.header}>
-        <Text style={styles.logo}>CYC ZINE</Text>
-        <Text style={styles.subtitle}>探索文化故事</Text>
-      </View>
+    <View style={styles.root}>
+      <StatusBar style="light" />
+      <Image
+        source={{ uri: COVER_IMAGE }}
+        style={styles.coverImage}
+        resizeMode="cover"
+      />
+      <View style={styles.coverDim} />
 
-      <View style={styles.entries}>
-        {entries.map((entry) => (
-          <Pressable
-            key={entry.title}
-            style={({ pressed }) => [
-              styles.entryCard,
-              pressed && styles.entryCardPressed,
-            ]}
-            onPress={() => router.push(entry.route)}
-          >
-            <Text style={styles.entryTitle}>{entry.title}</Text>
-            <Text style={styles.entryDescription}>{entry.description}</Text>
-          </Pressable>
-        ))}
-      </View>
-    </SafeAreaView>
+      <SafeAreaView style={styles.foreground} edges={['bottom']}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.copy}>
+            <Text style={styles.kicker}>CYC ZINE</Text>
+            <Text style={styles.title}>探索文化故事。</Text>
+            <Text style={styles.lede}>我們精選城市中的展覽、音樂與創作，</Text>
+            <Text style={styles.lede}>收藏屬於你的靈感地圖。</Text>
+          </View>
+
+          <View style={styles.entries}>
+            {entries.map((entry) => (
+              <Pressable
+                key={entry.route}
+                style={({ pressed }) => [
+                  styles.entryCard,
+                  pressed && styles.entryCardPressed,
+                ]}
+                onPress={() => router.push(entry.route)}
+              >
+                <Text style={styles.entryTitle}>{entry.title}</Text>
+                <Text style={styles.entryDescription}>{entry.description}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: '#fafafa',
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 32,
+    backgroundColor: colors.bg,
   },
-  header: {
-    marginBottom: 40,
+  coverImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
   },
-  logo: {
-    fontSize: 36,
+  coverDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.42)',
+  },
+  foreground: {
+    flex: 1,
+  },
+  scroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingVertical: space.xl,
+  },
+  copy: {
+    paddingHorizontal: space.xl,
+    marginBottom: space.xxl,
+    gap: 4,
+    alignItems: 'center',
+  },
+  kicker: {
+    fontSize: type.caption,
+    fontWeight: '700',
+    letterSpacing: 4,
+    color: colors.text,
+    marginBottom: space.sm,
+    textAlign: 'center',
+  },
+  title: {
+    fontSize: type.display,
     fontWeight: '700',
     letterSpacing: 2,
-    color: '#111',
+    color: colors.text,
+    marginBottom: space.sm,
+    textAlign: 'center',
   },
-  subtitle: {
-    marginTop: 8,
-    fontSize: 16,
-    color: '#666',
+  lede: {
+    fontSize: type.body,
+    lineHeight: 22,
+    color: colors.text,
+    textAlign: 'center',
   },
   entries: {
-    gap: 20,
+    paddingHorizontal: space.xl,
+    gap: space.md,
   },
   entryCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 24,
-    paddingHorizontal: 22,
-    borderWidth: 1,
-    borderColor: '#e5e5e5',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: radius.card,
+    paddingVertical: space.lg,
+    paddingHorizontal: space.xl,
+    borderWidth: 3,
+    borderColor: colors.border,
+    alignItems: 'center',
   },
   entryCardPressed: {
-    opacity: 0.85,
+    opacity: 0.88,
   },
   entryTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111',
+    fontSize: type.heading,
+    fontWeight: '700',
+    letterSpacing: 2,
+    color: colors.text,
+    textAlign: 'center',
   },
   entryDescription: {
-    marginTop: 8,
-    fontSize: 14,
+    marginTop: space.xs,
+    fontSize: type.meta,
     lineHeight: 20,
-    color: '#666',
+    color: colors.text,
+    textAlign: 'center',
   },
 });

@@ -1,48 +1,57 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type InterviewItem = {
-  id: string;
-  title: string;
-  summary: string;
-};
-
-const interviews: InterviewItem[] = [
-  {
-    id: '1',
-    title: '創作者專訪（範例）',
-    summary: '之後接上真實專訪資料',
-  },
-  {
-    id: '2',
-    title: '文化現場人物（範例）',
-    summary: '之後接上真實專訪資料',
-  },
-];
+import InterviewCard from '../components/InterviewCard';
+import InterviewTagPicker from '../components/InterviewTagPicker';
+import {
+  filterInterviews,
+  InterviewFilterTag,
+} from '../data/interviews';
+import { colors, space, type } from '../theme/tokens';
 
 export default function InterviewsScreen() {
+  const [tag, setTag] = useState<InterviewFilterTag>('all');
+  const people = useMemo(() => filterInterviews(tag), [tag]);
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
+      <StatusBar style="light" />
       <View style={styles.header}>
-        <Text style={styles.heading}>專訪</Text>
+        <View style={styles.headerText}>
+          <Text style={styles.heading}>專欄精選</Text>
+          <Text style={styles.lede}>
+            這裡收錄我們精選的台灣文化人物與故事。
+          </Text>
+        </View>
+        <Text style={styles.count}>{people.length} 筆</Text>
       </View>
 
-      <View style={styles.list}>
-        {interviews.map((item) => (
-          <Pressable
-            key={item.id}
-            style={({ pressed }) => [
-              styles.card,
-              pressed && styles.cardPressed,
-            ]}
-            onPress={() => router.push(`/interviews/${item.id}`)}
-          >
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.summary}>{item.summary}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <InterviewTagPicker selected={tag} onSelect={setTag} />
+
+      <FlatList
+        data={people}
+        keyExtractor={(item) => item.slug}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => (
+          <InterviewCard
+            person={item}
+            onPress={() => router.push(`/interviews/${item.slug}`)}
+          />
+        )}
+        ListEmptyComponent={
+          <Text style={styles.empty}>這個篩選目前沒有專訪</Text>
+        }
+        ListFooterComponent={
+          people.length > 0 ? (
+            <Text style={styles.footer}>持續新增中...</Text>
+          ) : null
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -50,41 +59,56 @@ export default function InterviewsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: colors.bg,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: space.xl,
+    paddingTop: space.lg,
+    paddingBottom: space.lg,
+    gap: space.md,
+  },
+  headerText: {
+    flex: 1,
+    gap: space.sm,
   },
   heading: {
-    fontSize: 18,
+    fontSize: type.heading,
     fontWeight: '700',
-    color: '#111',
+    letterSpacing: 2,
+    color: colors.text,
+  },
+  lede: {
+    fontSize: type.meta,
+    lineHeight: 20,
+    color: colors.textMuted,
+  },
+  count: {
+    fontSize: type.meta,
+    color: colors.textMuted,
+    paddingTop: 4,
   },
   list: {
-    paddingHorizontal: 20,
-    gap: 20,
+    paddingHorizontal: space.xl,
+    paddingBottom: space.xxxl,
+    gap: space.lg,
   },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 24,
-    paddingHorizontal: 22,
-    borderWidth: 1,
-    borderColor: '#e5e5e5',
+  row: {
+    gap: space.lg,
   },
-  cardPressed: {
-    opacity: 0.85,
+  empty: {
+    textAlign: 'center',
+    color: colors.textMuted,
+    fontSize: type.meta,
+    paddingTop: space.xxxl,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111',
-  },
-  summary: {
-    marginTop: 6,
-    fontSize: 14,
-    color: '#666',
+  footer: {
+    textAlign: 'center',
+    color: colors.textDim,
+    fontSize: type.caption,
+    letterSpacing: 1,
+    paddingTop: space.lg,
   },
 });
