@@ -14,15 +14,15 @@ import {
   fetchFavoriteList,
   toggleFavorite,
   FavoriteExtra,
-} from '../api/favorites';
-import { ApiError } from '../api/errors';
+} from '@/api/favorites';
+import { ApiError } from '@/api/errors';
 import {
   cancelAllEventReminders,
   onEventFavorited,
   onEventUnfavorited,
   syncEventReminders,
-} from '../notifications/eventReminders';
-import { User } from '../types/user';
+} from '@/notifications/eventReminders';
+import { User } from '@/types/user';
 import {
   clearUser,
   loadStoredUser,

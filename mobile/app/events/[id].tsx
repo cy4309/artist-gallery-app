@@ -1,4 +1,4 @@
-import EventDetailScreen from '../../src/screens/EventDetailScreen';
+import EventDetailScreen from '@/screens/EventDetailScreen';
 
 export default function EventDetailRoute() {
   return <EventDetailScreen />;

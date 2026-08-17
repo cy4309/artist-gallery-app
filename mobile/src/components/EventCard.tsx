@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import FavoriteButton from './FavoriteButton';
-import { OrgEvent } from '../types/orgEvent';
-import { colors, radius, space, type } from '../theme/tokens';
-import { eventCityName } from '../utils/city';
-import { formatEventDateRange } from '../utils/formatDate';
-import { getEventImageUrl } from '../utils/eventImage';
+import { OrgEvent } from '@/types/orgEvent';
+import { colors, radius, space, type } from '@/theme/tokens';
+import { eventCityName } from '@/utils/city';
+import { formatEventDateRange, toISODateTime } from '@/utils/formatDate';
+import { getEventImageUrl } from '@/utils/eventImage';
 
 type EventCardProps = {
   event: OrgEvent;
@@ -41,8 +41,8 @@ export default function EventCard({ event, onPress }: EventCardProps) {
           eventId={String(event.actId)}
           extra={{
             eventTitle: event.actName,
-            eventStartDate: event.startTime,
-            eventEndDate: event.endTime,
+            eventStartDate: toISODateTime(event.startTime),
+            eventEndDate: toISODateTime(event.endTime),
             eventLocation: event.address,
             eventUrl: event.website,
             imageUrl: imageUrl ?? undefined,

@@ -1,15 +1,36 @@
+import { parseEventDate } from './formatDate';
+
+function taipeiYmd(date: Date): { y: string; m: string; d: string } | null {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+
+  const y = parts.find((part) => part.type === 'year')?.value;
+  const m = parts.find((part) => part.type === 'month')?.value;
+  const d = parts.find((part) => part.type === 'day')?.value;
+  if (!y || !m || !d) return null;
+  return { y, m, d };
+}
+
 /** 與網站 favorites 相同：結束日以台灣當天 23:59:59 計 */
-export function isEventEnded(endDate?: string): boolean {
-  if (!endDate) return false;
+export function isEventEnded(
+  endDate?: string,
+  now: number = Date.now()
+): boolean {
+  const end = parseEventDate(endDate);
+  if (!end) return false;
 
-  const end = new Date(endDate);
-  if (Number.isNaN(end.getTime())) return false;
+  const ymd = taipeiYmd(end);
+  if (!ymd) return false;
 
-  const taiwanEndOfDay = new Date(
-    end.toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' }) + 'T23:59:59'
-  );
+  // 不用 `YYYY-MM-DDTHH:mm:ss`（無時區）：Hermes/Android 會是 Invalid Date
+  const taiwanEndOfDay = new Date(`${ymd.y}-${ymd.m}-${ymd.d}T23:59:59+08:00`);
+  if (Number.isNaN(taiwanEndOfDay.getTime())) return false;
 
-  return Date.now() > taiwanEndOfDay.getTime();
+  return now > taiwanEndOfDay.getTime();
 }
 
 /** 未結束在前；同組再依收藏時間新→舊 */

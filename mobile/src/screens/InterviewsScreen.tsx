@@ -4,13 +4,13 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import InterviewCard from '../components/InterviewCard';
-import InterviewTagPicker from '../components/InterviewTagPicker';
+import InterviewCard from '@/components/InterviewCard';
+import InterviewTagPicker from '@/components/InterviewTagPicker';
 import {
   filterInterviews,
   InterviewFilterTag,
-} from '../data/interviews';
-import { colors, space, type } from '../theme/tokens';
+} from '@/data/interviews';
+import { colors, space, type } from '@/theme/tokens';
 
 export default function InterviewsScreen() {
   const [tag, setTag] = useState<InterviewFilterTag>('all');

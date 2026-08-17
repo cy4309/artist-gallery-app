@@ -1,6 +1,6 @@
-import { env } from '../config/env';
+import { env } from '@/config/env';
 import { ApiError } from './errors';
-import { getSessionCookieHeader } from '../auth/session';
+import { getSessionCookieHeader } from '@/auth/session';
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 

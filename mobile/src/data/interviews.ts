@@ -1,4 +1,4 @@
-import { InterviewPerson, InterviewTag } from '../types/interview';
+import { InterviewPerson, InterviewTag } from '@/types/interview';
 
 export const interviews: InterviewPerson[] = [
   {

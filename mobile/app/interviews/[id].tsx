@@ -1,4 +1,4 @@
-import InterviewDetailScreen from '../../src/screens/InterviewDetailScreen';
+import InterviewDetailScreen from '@/screens/InterviewDetailScreen';
 
 export default function InterviewDetailRoute() {
   return <InterviewDetailScreen />;

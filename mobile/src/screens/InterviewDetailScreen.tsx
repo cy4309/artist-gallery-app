@@ -13,9 +13,9 @@ import { useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getInterviewBySlug, INTERVIEW_TAG_LABELS } from '../data/interviews';
-import { colors, radius, space, type } from '../theme/tokens';
-import { getInterviewImageUrl } from '../utils/interviewImage';
+import { getInterviewBySlug, INTERVIEW_TAG_LABELS } from '@/data/interviews';
+import { colors, radius, space, type } from '@/theme/tokens';
+import { getInterviewImageUrl } from '@/utils/interviewImage';
 
 export default function InterviewDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

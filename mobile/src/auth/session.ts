@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 
-import { User } from '../types/user';
+import { User } from '@/types/user';
 
 const USER_KEY = 'cyc_user';
 

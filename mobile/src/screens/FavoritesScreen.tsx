@@ -11,12 +11,12 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useAuth } from '../auth/AuthContext';
-import { fetchFavoriteList, FavoriteRecord } from '../api/favorites';
-import FavoriteButton from '../components/FavoriteButton';
-import { colors, radius, space, type } from '../theme/tokens';
-import { formatEventDateRange } from '../utils/formatDate';
-import { isEventEnded, sortFavoritesLikeWeb } from '../utils/favorites';
+import { useAuth } from '@/auth/AuthContext';
+import { fetchFavoriteList, FavoriteRecord } from '@/api/favorites';
+import FavoriteButton from '@/components/FavoriteButton';
+import { colors, radius, space, type } from '@/theme/tokens';
+import { formatEventDateRange } from '@/utils/formatDate';
+import { isEventEnded, sortFavoritesLikeWeb } from '@/utils/favorites';
 
 export default function FavoritesScreen() {
   const { user, loading: authLoading, favoriteIds } = useAuth();

@@ -3,9 +3,9 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useAuth } from '../auth/AuthContext';
-import { env } from '../config/env';
-import { colors, radius, space, type } from '../theme/tokens';
+import { useAuth } from '@/auth/AuthContext';
+import { env } from '@/config/env';
+import { colors, radius, space, type } from '@/theme/tokens';
 
 type EntryItem = {
   title: string;

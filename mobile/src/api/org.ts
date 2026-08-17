@@ -1,4 +1,4 @@
-import { OrgEvent } from '../types/orgEvent';
+import { OrgEvent } from '@/types/orgEvent';
 import { apiGet } from './client';
 import { ApiError } from './errors';
 

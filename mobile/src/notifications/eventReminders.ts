@@ -1,7 +1,7 @@
 import { Alert, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
-import { registerPushToken } from '../api/push';
+import { registerPushToken } from '@/api/push';
 import { reminderFireAt } from './eventReminderTime';
 import {
   loadEventRemindersEnabled,

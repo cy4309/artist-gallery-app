@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { InterviewPerson } from '../types/interview';
-import { colors, radius, space, type } from '../theme/tokens';
-import { getInterviewImageUrl } from '../utils/interviewImage';
+import { InterviewPerson } from '@/types/interview';
+import { colors, radius, space, type } from '@/theme/tokens';
+import { getInterviewImageUrl } from '@/utils/interviewImage';
 
 type InterviewCardProps = {
   person: InterviewPerson;

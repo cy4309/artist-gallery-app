@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { useAuth } from '../auth/AuthContext';
-import { FavoriteExtra } from '../api/favorites';
-import { colors, type } from '../theme/tokens';
+import { useAuth } from '@/auth/AuthContext';
+import { FavoriteExtra } from '@/api/favorites';
+import { colors, type } from '@/theme/tokens';
 
 type FavoriteButtonProps = {
   eventId: string;

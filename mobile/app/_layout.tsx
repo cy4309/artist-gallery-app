@@ -4,9 +4,9 @@ import { View, StyleSheet } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-import { AuthProvider } from '../src/auth/AuthContext';
-import AccountBar from '../src/components/AccountBar';
-import NotificationOpenHandler from '../src/notifications/NotificationOpenHandler';
+import { AuthProvider } from '@/auth/AuthContext';
+import AccountBar from '@/components/AccountBar';
+import NotificationOpenHandler from '@/notifications/NotificationOpenHandler';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({

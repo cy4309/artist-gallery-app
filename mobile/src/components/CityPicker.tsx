@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, radius, space, type } from '../theme/tokens';
+import { colors, radius, space, type } from '@/theme/tokens';
 
 export const ALL_CITIES = '全部';
 

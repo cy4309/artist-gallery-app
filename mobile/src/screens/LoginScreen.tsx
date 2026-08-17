@@ -6,10 +6,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 
-import { useAuth } from '../auth/AuthContext';
-import { env } from '../config/env';
-import { User } from '../types/user';
-import { colors, radius, space, type } from '../theme/tokens';
+import { useAuth } from '@/auth/AuthContext';
+import { env } from '@/config/env';
+import { User } from '@/types/user';
+import { colors, radius, space, type } from '@/theme/tokens';
 
 WebBrowser.maybeCompleteAuthSession();
 

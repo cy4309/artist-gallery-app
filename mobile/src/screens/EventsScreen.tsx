@@ -11,13 +11,18 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getOrgData } from '../api/org';
-import { ApiError } from '../api/errors';
-import CityPicker, { ALL_CITIES } from '../components/CityPicker';
-import EventCard from '../components/EventCard';
-import { colors, space, type } from '../theme/tokens';
-import { OrgEvent } from '../types/orgEvent';
-import { eventCityName, uniqueCityNames } from '../utils/city';
+import { getOrgData } from '@/api/org';
+import { ApiError } from '@/api/errors';
+import CityPicker, { ALL_CITIES } from '@/components/CityPicker';
+import EventCard from '@/components/EventCard';
+import {
+  EventSearchPanel,
+  EventSearchTrigger,
+} from '@/components/EventSearchBar';
+import { colors, space, type } from '@/theme/tokens';
+import { OrgEvent } from '@/types/orgEvent';
+import { eventCityName, uniqueCityNames } from '@/utils/city';
+import { filterEventsByKeyword } from '@/utils/eventSearch';
 
 type Status = 'loading' | 'success' | 'error';
 
@@ -26,6 +31,8 @@ export default function EventsScreen() {
   const [events, setEvents] = useState<OrgEvent[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedCity, setSelectedCity] = useState(ALL_CITIES);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -50,26 +57,50 @@ export default function EventsScreen() {
   const cities = useMemo(() => uniqueCityNames(events), [events]);
 
   const filtered = useMemo(() => {
-    if (selectedCity === ALL_CITIES) return events;
-    return events.filter((event) => eventCityName(event) === selectedCity);
-  }, [events, selectedCity]);
+    const byCity =
+      selectedCity === ALL_CITIES
+        ? events
+        : events.filter((event) => eventCityName(event) === selectedCity);
+    return filterEventsByKeyword(byCity, searchQuery);
+  }, [events, selectedCity, searchQuery]);
+
+  const hasSearch = searchQuery.trim().length > 0;
+
+  function toggleSearch() {
+    setSearchOpen((open) => {
+      if (open) setSearchQuery('');
+      return !open;
+    });
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar style="light" />
       <View style={styles.header}>
         <Text style={styles.heading}>活動</Text>
-        <Text style={styles.count}>
-          {status === 'success' ? `${filtered.length} 筆` : ' '}
-        </Text>
+        <View style={styles.headerRight}>
+          <Text style={styles.count}>
+            {status === 'success' ? `${filtered.length} 筆` : ' '}
+          </Text>
+          {status === 'success' && events.length > 0 ? (
+            <EventSearchTrigger expanded={searchOpen} onToggle={toggleSearch} />
+          ) : null}
+        </View>
       </View>
 
       {status === 'success' && events.length > 0 && (
-        <CityPicker
-          cities={cities}
-          selected={selectedCity}
-          onSelect={setSelectedCity}
-        />
+        <>
+          <EventSearchPanel
+            expanded={searchOpen}
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
+          <CityPicker
+            cities={cities}
+            selected={selectedCity}
+            onSelect={setSelectedCity}
+          />
+        </>
       )}
 
       {status === 'loading' && (
@@ -98,8 +129,12 @@ export default function EventsScreen() {
 
       {status === 'success' && events.length > 0 && filtered.length === 0 && (
         <View style={styles.center}>
-          <Text style={styles.errorTitle}>這個縣市暫無活動</Text>
-          <Text style={styles.centerText}>試試選「全部」或其他縣市</Text>
+          <Text style={styles.errorTitle}>
+            {hasSearch ? '找不到符合的活動' : '這個縣市暫無活動'}
+          </Text>
+          <Text style={styles.centerText}>
+            {hasSearch ? '試試其他關鍵字或縣市' : '試試選「全部」或其他縣市'}
+          </Text>
         </View>
       )}
 
@@ -139,9 +174,12 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: colors.text,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+  },
   count: {
-    width: 72,
-    textAlign: 'right',
     fontSize: type.meta,
     color: colors.textMuted,
   },

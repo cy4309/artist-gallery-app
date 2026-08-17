@@ -3,8 +3,10 @@ import {
   ActivityIndicator,
   Image,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -13,14 +15,15 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getOrgData } from '../api/org';
-import { ApiError } from '../api/errors';
-import { colors, radius, space, type } from '../theme/tokens';
-import { OrgEvent } from '../types/orgEvent';
-import { formatEventDateRange } from '../utils/formatDate';
-import { getEventImageUrl } from '../utils/eventImage';
-import { eventCityName } from '../utils/city';
-import FavoriteButton from '../components/FavoriteButton';
+import { getOrgData } from '@/api/org';
+import { ApiError } from '@/api/errors';
+import { colors, radius, space, type } from '@/theme/tokens';
+import { OrgEvent } from '@/types/orgEvent';
+import { formatEventDateRange, toISODateTime } from '@/utils/formatDate';
+import { getEventImageUrl } from '@/utils/eventImage';
+import { eventCityName } from '@/utils/city';
+import FavoriteButton from '@/components/FavoriteButton';
+import { getEventShareUrl } from '@/utils/share';
 
 type Status = 'loading' | 'success' | 'error';
 
@@ -114,8 +117,8 @@ export default function EventDetailScreen() {
                 eventId={String(event.actId)}
                 extra={{
                   eventTitle: event.actName,
-                  eventStartDate: event.startTime,
-                  eventEndDate: event.endTime,
+                  eventStartDate: toISODateTime(event.startTime),
+                  eventEndDate: toISODateTime(event.endTime),
                   eventLocation: event.address,
                   eventUrl: event.website,
                   imageUrl: imageUrl ?? undefined,
@@ -147,6 +150,26 @@ export default function EventDetailScreen() {
               <Text style={styles.linkText}>造訪官網 →</Text>
             </Pressable>
           ) : null}
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.linkButton,
+              pressed && styles.linkPressed,
+            ]}
+            onPress={() => {
+              const url = getEventShareUrl(event.actId);
+              void Share.share({
+                title: event.actName,
+                message:
+                  Platform.OS === 'android'
+                    ? `${event.actName}\n${url}`
+                    : event.actName,
+                url,
+              });
+            }}
+          >
+            <Text style={styles.linkText}>分享活動</Text>
+          </Pressable>
         </ScrollView>
       )}
     </SafeAreaView>

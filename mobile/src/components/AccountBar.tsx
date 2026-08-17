@@ -1,8 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { router, usePathname } from "expo-router";
 
-import { useAuth } from "../auth/AuthContext";
-import { colors, space, type } from "../theme/tokens";
+import { useAuth } from "@/auth/AuthContext";
+import { colors, space, type } from "@/theme/tokens";
 
 export default function AccountBar() {
   const { user, loading, logout, cancelPendingFavorite } = useAuth();

@@ -6,8 +6,8 @@ import {
   INTERVIEW_TAG_GROUPS,
   INTERVIEW_TAG_LABELS,
   InterviewFilterTag,
-} from '../data/interviews';
-import { colors, radius, space, type } from '../theme/tokens';
+} from '@/data/interviews';
+import { colors, radius, space, type } from '@/theme/tokens';
 
 type InterviewTagPickerProps = {
   selected: InterviewFilterTag;

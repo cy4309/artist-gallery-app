@@ -1,4 +1,4 @@
-import FavoritesScreen from '../src/screens/FavoritesScreen';
+import FavoritesScreen from '@/screens/FavoritesScreen';
 
 export default function FavoritesRoute() {
   return <FavoritesScreen />;

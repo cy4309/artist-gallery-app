@@ -14,20 +14,20 @@ import { StatusBar } from "expo-status-bar";
 import * as Notifications from "expo-notifications";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { fetchFavoriteList } from "../api/favorites";
-import { registerPushToken, sendTestPush } from "../api/push";
-import { ApiError } from "../api/errors";
-import { useAuth } from "../auth/AuthContext";
+import { fetchFavoriteList } from "@/api/favorites";
+import { registerPushToken, sendTestPush } from "@/api/push";
+import { ApiError } from "@/api/errors";
+import { useAuth } from "@/auth/AuthContext";
 import {
   setEventRemindersEnabled,
   setInstantFavoriteNotify,
-} from "../notifications/eventReminders";
+} from "@/notifications/eventReminders";
 import {
   loadEventRemindersEnabled,
   loadInstantFavoriteNotify,
-} from "../notifications/prefs";
-import { registerForPushNotificationsAsync } from "../notifications/registerForPush";
-import { colors, radius, space, type } from "../theme/tokens";
+} from "@/notifications/prefs";
+import { registerForPushNotificationsAsync } from "@/notifications/registerForPush";
+import { colors, radius, space, type } from "@/theme/tokens";
 
 type Status = "idle" | "loading" | "success" | "error";
 
