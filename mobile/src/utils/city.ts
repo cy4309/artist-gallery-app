@@ -30,6 +30,12 @@ function unifyTai(value: string): string {
   return value.replace(/臺/g, '台').trim();
 }
 
+/** 統一顯示為「台」寫法 */
+export function displayCityName(raw?: string | null): string {
+  if (!raw) return '';
+  return toCityName(raw) ?? unifyTai(raw);
+}
+
 function cityAliases(city: CityName): string[] {
   const withTai = city.replace(/台/g, '臺');
   return withTai === city ? [city] : [city, withTai];

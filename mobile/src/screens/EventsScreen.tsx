@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -15,62 +15,176 @@ import { getOrgData } from '@/api/org';
 import { ApiError } from '@/api/errors';
 import CityPicker, { ALL_CITIES } from '@/components/CityPicker';
 import EventCard from '@/components/EventCard';
+import EventCategoryPicker from '@/components/EventCategoryPicker';
 import {
   EventSearchPanel,
   EventSearchTrigger,
 } from '@/components/EventSearchBar';
 import { colors, space, type } from '@/theme/tokens';
 import { OrgEvent } from '@/types/orgEvent';
-import { eventCityName, uniqueCityNames } from '@/utils/city';
+import { CITY_ORDER } from '@/utils/city';
 import { filterEventsByKeyword } from '@/utils/eventSearch';
-
-type Status = 'loading' | 'success' | 'error';
+import { EventCategoryId } from '@/utils/eventCategories';
+import {
+  loadSessionCategories,
+  saveSessionCategories,
+} from '@/utils/eventCategoryPrefs';
+import { eventRouteSegment } from '@/utils/eventId';
 
 export default function EventsScreen() {
-  const [status, setStatus] = useState<Status>('loading');
-  const [events, setEvents] = useState<OrgEvent[]>([]);
-  const [errorMessage, setErrorMessage] = useState('');
   const [selectedCity, setSelectedCity] = useState(ALL_CITIES);
+  const [pickingCategories, setPickingCategories] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<
+    EventCategoryId[]
+  >([]);
+  const [orgData, setOrgData] = useState<OrgEvent[]>([]);
+  const [orgLoading, setOrgLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [hasConfirmed, setHasConfirmed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [catalog, setCatalog] = useState<OrgEvent[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogReady, setCatalogReady] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      setStatus('loading');
-      const data = await getOrgData();
-      setEvents(data);
-      setStatus('success');
-    } catch (error) {
-      if (error instanceof ApiError) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage('Unknown error');
-      }
-      setStatus('error');
-    }
-  }, []);
+  const cities = useMemo(() => [...CITY_ORDER], []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const searchResults = useMemo(
+    () => filterEventsByKeyword(catalog, searchQuery),
+    [catalog, searchQuery]
+  );
 
-  const cities = useMemo(() => uniqueCityNames(events), [events]);
-
-  const filtered = useMemo(() => {
-    const byCity =
-      selectedCity === ALL_CITIES
-        ? events
-        : events.filter((event) => eventCityName(event) === selectedCity);
-    return filterEventsByKeyword(byCity, searchQuery);
-  }, [events, selectedCity, searchQuery]);
+  const cityFiltered = useMemo(
+    () => filterEventsByKeyword(orgData, searchQuery),
+    [orgData, searchQuery]
+  );
 
   const hasSearch = searchQuery.trim().length > 0;
+  const listEvents = hasSearch ? searchResults : cityFiltered;
 
-  function toggleSearch() {
+  const loadEvents = useCallback(
+    async (city: string, categories: EventCategoryId[]) => {
+      try {
+        setOrgLoading(true);
+        setErrorMessage('');
+        setPickingCategories(false);
+        const events = await getOrgData({
+          city: city === ALL_CITIES ? undefined : city,
+          categories,
+        });
+        setOrgData(events);
+        setHasConfirmed(true);
+      } catch (error) {
+        if (error instanceof ApiError) {
+          setErrorMessage(error.message);
+        } else {
+          setErrorMessage('載入失敗');
+        }
+        setOrgData([]);
+        setHasConfirmed(true);
+      } finally {
+        setOrgLoading(false);
+      }
+    },
+    []
+  );
+
+  const ensureCatalog = useCallback(async () => {
+    if (catalogReady || catalogLoading) return catalog;
+
+    try {
+      setCatalogLoading(true);
+      const events = await getOrgData();
+      setCatalog(events);
+      setCatalogReady(true);
+      return events;
+    } catch {
+      setCatalog([]);
+      setCatalogReady(false);
+      return [];
+    } finally {
+      setCatalogLoading(false);
+    }
+  }, [catalog, catalogLoading, catalogReady]);
+
+  const toggleSearch = () => {
     setSearchOpen((open) => {
-      if (open) setSearchQuery('');
-      return !open;
+      const next = !open;
+      if (!next) setSearchQuery('');
+      else void ensureCatalog();
+      return next;
     });
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (value.trim()) void ensureCatalog();
+  };
+
+  const handleSelectCity = async (city: string) => {
+    setSelectedCity(city);
+    setHasConfirmed(false);
+    setOrgData([]);
+    setSearchQuery('');
+
+    const saved = await loadSessionCategories();
+    if (saved && saved.length > 0) {
+      setSelectedCategories(saved);
+      void loadEvents(city, saved);
+      return;
+    }
+
+    setSelectedCategories([]);
+    setPickingCategories(true);
+  };
+
+  const handleCancelPick = () => {
+    setPickingCategories(false);
+  };
+
+  const handleConfirmCategories = async (categories: EventCategoryId[]) => {
+    if (categories.length === 0) return;
+    setSelectedCategories(categories);
+    await saveSessionCategories(categories);
+    await loadEvents(selectedCity, categories);
+  };
+
+  const handleChangeCategories = async () => {
+    const saved = await loadSessionCategories();
+    setSelectedCategories(saved && saved.length > 0 ? saved : []);
+    setPickingCategories(true);
+    setHasConfirmed(false);
+    setOrgData([]);
+    setSearchQuery('');
+    setSearchOpen(false);
+  };
+
+  if (pickingCategories && !hasSearch) {
+    return (
+      <>
+        <StatusBar style="light" />
+        <EventCategoryPicker
+          city={selectedCity === ALL_CITIES ? '全部縣市' : selectedCity}
+          selected={selectedCategories}
+          onChange={setSelectedCategories}
+          onConfirm={handleConfirmCategories}
+          onCancel={handleCancelPick}
+          loading={orgLoading}
+        />
+      </>
+    );
+  }
+
+  if (orgLoading || (hasSearch && catalogLoading)) {
+    return (
+      <SafeAreaView style={styles.container} edges={['bottom']}>
+        <StatusBar style="light" />
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.border} />
+          <Text style={styles.centerText}>載入活動中…</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -79,73 +193,89 @@ export default function EventsScreen() {
       <View style={styles.header}>
         <Text style={styles.heading}>活動</Text>
         <View style={styles.headerRight}>
-          <Text style={styles.count}>
-            {status === 'success' ? `${filtered.length} 筆` : ' '}
-          </Text>
-          {status === 'success' && events.length > 0 ? (
-            <EventSearchTrigger expanded={searchOpen} onToggle={toggleSearch} />
+          {hasConfirmed || hasSearch ? (
+            <Pressable onPress={handleChangeCategories} hitSlop={8}>
+              <Text style={styles.changeType}>變更類型</Text>
+            </Pressable>
           ) : null}
+          <Text style={styles.count}>
+            {hasConfirmed || hasSearch ? `${listEvents.length} 筆` : ' '}
+          </Text>
+          <EventSearchTrigger expanded={searchOpen} onToggle={toggleSearch} />
         </View>
       </View>
 
-      {status === 'success' && events.length > 0 && (
-        <>
-          <EventSearchPanel
-            expanded={searchOpen}
-            value={searchQuery}
-            onChange={setSearchQuery}
-          />
-          <CityPicker
-            cities={cities}
-            selected={selectedCity}
-            onSelect={setSelectedCity}
-          />
-        </>
+      <EventSearchPanel
+        expanded={searchOpen}
+        value={searchQuery}
+        onChange={handleSearchChange}
+      />
+
+      {!hasSearch && (
+        <CityPicker
+          cities={cities}
+          selected={selectedCity}
+          onSelect={handleSelectCity}
+        />
       )}
 
-      {status === 'loading' && (
+      {!hasSearch && !hasConfirmed && (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.border} />
-          <Text style={styles.centerText}>載入活動中…</Text>
+          <Text style={styles.promptTitle}>選擇縣市開始瀏覽</Text>
+          <Text style={styles.centerText}>
+            也可直接用上方搜尋；第一次選縣市時會請你選活動類型
+          </Text>
         </View>
       )}
 
-      {status === 'error' && (
+      {!hasSearch && hasConfirmed && errorMessage ? (
         <View style={styles.center}>
           <Text style={styles.errorTitle}>載入失敗</Text>
           <Text style={styles.centerText}>{errorMessage}</Text>
-          <Pressable style={styles.retryButton} onPress={load}>
+          <Pressable
+            style={styles.retryButton}
+            onPress={() => loadEvents(selectedCity, selectedCategories)}
+          >
             <Text style={styles.retryText}>再試一次</Text>
           </Pressable>
         </View>
-      )}
+      ) : null}
 
-      {status === 'success' && events.length === 0 && (
+      {!hasSearch && hasConfirmed && !errorMessage && orgData.length === 0 && (
         <View style={styles.center}>
-          <Text style={styles.errorTitle}>目前沒有活動</Text>
-          <Text style={styles.centerText}>稍後再回來看看</Text>
+          <Text style={styles.errorTitle}>目前沒有符合的活動</Text>
+          <Text style={styles.centerText}>試試其他縣市或變更類型</Text>
         </View>
       )}
 
-      {status === 'success' && events.length > 0 && filtered.length === 0 && (
+      {!hasSearch &&
+        hasConfirmed &&
+        !errorMessage &&
+        orgData.length > 0 &&
+        listEvents.length === 0 && (
+          <View style={styles.center}>
+            <Text style={styles.errorTitle}>沒有符合的活動</Text>
+            <Text style={styles.centerText}>試試調整搜尋關鍵字</Text>
+          </View>
+        )}
+
+      {hasSearch && listEvents.length === 0 && (
         <View style={styles.center}>
-          <Text style={styles.errorTitle}>
-            {hasSearch ? '找不到符合的活動' : '這個縣市暫無活動'}
-          </Text>
-          <Text style={styles.centerText}>
-            {hasSearch ? '試試其他關鍵字或縣市' : '試試選「全部」或其他縣市'}
-          </Text>
+          <Text style={styles.errorTitle}>找不到符合的活動</Text>
+          <Text style={styles.centerText}>試試其他關鍵字或縣市</Text>
         </View>
       )}
 
-      {status === 'success' && filtered.length > 0 && (
+      {listEvents.length > 0 && (hasSearch || hasConfirmed) && (
         <FlatList
-          data={filtered}
-          keyExtractor={(item) => String(item.actId)}
+          data={listEvents}
+          keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <EventCard
               event={item}
-              onPress={() => router.push(`/events/${item.actId}`)}
+              onPress={() =>
+                router.push(`/events/${eventRouteSegment(item.id)}`)
+              }
             />
           )}
           contentContainerStyle={styles.list}
@@ -179,6 +309,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.md,
   },
+  changeType: {
+    fontSize: type.caption,
+    fontWeight: '600',
+    color: colors.textMuted,
+    textDecorationLine: 'underline',
+  },
   count: {
     fontSize: type.meta,
     color: colors.textMuted,
@@ -195,6 +331,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: space.xxl,
     gap: space.md,
+  },
+  promptTitle: {
+    fontSize: type.heading,
+    fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
   },
   centerText: {
     fontSize: type.meta,

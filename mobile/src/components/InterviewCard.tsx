@@ -4,6 +4,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { InterviewPerson } from '@/types/interview';
 import { colors, radius, space, type } from '@/theme/tokens';
 import { getInterviewImageUrl } from '@/utils/interviewImage';
+import { PLACEHOLDER_IMAGE_URL } from '@/utils/placeholderImage';
 
 type InterviewCardProps = {
   person: InterviewPerson;
@@ -13,25 +14,22 @@ type InterviewCardProps = {
 export default function InterviewCard({ person, onPress }: InterviewCardProps) {
   const imageUrl = getInterviewImageUrl(person.coverImage);
   const [imageFailed, setImageFailed] = useState(false);
-  const showImage = Boolean(imageUrl) && !imageFailed;
+  const displayUrl =
+    imageUrl && !imageFailed ? imageUrl : PLACEHOLDER_IMAGE_URL;
 
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
-      {showImage ? (
-        <Image
-          source={{ uri: imageUrl as string }}
-          style={styles.image}
-          resizeMode="cover"
-          onError={() => setImageFailed(true)}
-        />
-      ) : (
-        <View style={styles.placeholder}>
-          <Text style={styles.placeholderText}>無圖片</Text>
-        </View>
-      )}
+      <Image
+        source={{ uri: displayUrl }}
+        style={styles.image}
+        resizeMode="cover"
+        onError={() => {
+          if (imageUrl && !imageFailed) setImageFailed(true);
+        }}
+      />
       <View style={styles.body}>
         <Text style={styles.name}>{person.name}</Text>
         <Text style={styles.role}>{person.role}</Text>
@@ -57,17 +55,6 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 3 / 4,
     backgroundColor: colors.bg,
-  },
-  placeholder: {
-    width: '100%',
-    aspectRatio: 3 / 4,
-    backgroundColor: colors.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderText: {
-    fontSize: type.meta,
-    color: colors.textDim,
   },
   body: {
     padding: space.md,

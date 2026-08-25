@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text } from 'react-native';
 import { useAuth } from '@/auth/AuthContext';
 import { FavoriteExtra } from '@/api/favorites';
 import { colors, type } from '@/theme/tokens';
+import { favoritesInclude } from '@/utils/eventId';
 
 type FavoriteButtonProps = {
   eventId: string;
@@ -13,7 +14,7 @@ type FavoriteButtonProps = {
 export default function FavoriteButton({ eventId, extra }: FavoriteButtonProps) {
   const { user, favoriteIds, toggleFavoriteForEvent, startLoginToFavorite } =
     useAuth();
-  const isFavorite = favoriteIds.includes(eventId);
+  const isFavorite = favoritesInclude(favoriteIds, eventId);
   const [busy, setBusy] = useState(false);
 
   async function onPress() {

@@ -28,6 +28,10 @@ import {
   loadStoredUser,
   saveUser,
 } from './session';
+import {
+  favoritesInclude,
+  findStoredFavoriteId,
+} from '@/utils/eventId';
 
 type PendingFavorite = {
   eventId: string;
@@ -156,10 +160,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const wasFavorite = favoriteIds.includes(eventId);
-      setFavoriteIds((prev) =>
-        wasFavorite ? prev.filter((id) => id !== eventId) : [...prev, eventId]
-      );
+      const wasFavorite = Boolean(findStoredFavoriteId(favoriteIds, eventId));
+      setFavoriteIds((prev) => {
+        const stored = findStoredFavoriteId(prev, eventId);
+        if (wasFavorite && stored) {
+          return prev.filter((id) => id !== stored);
+        }
+        if (!wasFavorite) {
+          return prev.includes(eventId) ? prev : [...prev, eventId];
+        }
+        return prev;
+      });
 
       try {
         await toggleFavorite(eventId, extra);
@@ -177,7 +188,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         setFavoriteIds((prev) =>
-          wasFavorite ? [...prev, eventId] : prev.filter((id) => id !== eventId)
+          wasFavorite
+            ? [...prev, findStoredFavoriteId(prev, eventId) ?? eventId]
+            : prev.filter((id) => !favoritesInclude([id], eventId))
         );
         if (error instanceof ApiError && error.status === 401) {
           pendingFavorite = { eventId, extra };

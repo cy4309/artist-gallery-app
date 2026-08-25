@@ -17,6 +17,7 @@ import FavoriteButton from '@/components/FavoriteButton';
 import { colors, radius, space, type } from '@/theme/tokens';
 import { formatEventDateRange } from '@/utils/formatDate';
 import { isEventEnded, sortFavoritesLikeWeb } from '@/utils/favorites';
+import { eventRouteSegment, favoritesInclude } from '@/utils/eventId';
 
 export default function FavoritesScreen() {
   const { user, loading: authLoading, favoriteIds } = useAuth();
@@ -49,7 +50,7 @@ export default function FavoritesScreen() {
   useEffect(() => {
     setItems((prev) =>
       sortFavoritesLikeWeb(
-        prev.filter((item) => favoriteIds.includes(String(item.eventId)))
+        prev.filter((item) => favoritesInclude(favoriteIds, String(item.eventId)))
       )
     );
   }, [favoriteIds]);
@@ -94,7 +95,9 @@ export default function FavoritesScreen() {
             return (
               <Pressable
                 style={[styles.card, ended && styles.cardEnded]}
-                onPress={() => router.push(`/events/${item.eventId}`)}
+                onPress={() =>
+                  router.push(`/events/${eventRouteSegment(String(item.eventId))}`)
+                }
               >
                 <View style={styles.cardHeader}>
                   <Text

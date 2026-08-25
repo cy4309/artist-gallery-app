@@ -16,13 +16,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getInterviewBySlug, INTERVIEW_TAG_LABELS } from '@/data/interviews';
 import { colors, radius, space, type } from '@/theme/tokens';
 import { getInterviewImageUrl } from '@/utils/interviewImage';
+import { PLACEHOLDER_IMAGE_URL } from '@/utils/placeholderImage';
 
 export default function InterviewDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const person = id ? getInterviewBySlug(id) : undefined;
   const imageUrl = person ? getInterviewImageUrl(person.coverImage) : null;
   const [imageFailed, setImageFailed] = useState(false);
-  const showImage = Boolean(imageUrl) && !imageFailed;
+  const displayUrl =
+    imageUrl && !imageFailed ? imageUrl : PLACEHOLDER_IMAGE_URL;
 
   async function openWebsite() {
     if (!person?.websiteSrc) return;
@@ -51,18 +53,14 @@ export default function InterviewDetailScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.mediaFrame}>
-            {showImage ? (
-              <Image
-                source={{ uri: imageUrl as string }}
-                style={styles.image}
-                resizeMode="cover"
-                onError={() => setImageFailed(true)}
-              />
-            ) : (
-              <View style={styles.placeholder}>
-                <Text style={styles.placeholderText}>無圖片</Text>
-              </View>
-            )}
+            <Image
+              source={{ uri: displayUrl }}
+              style={styles.image}
+              resizeMode="cover"
+              onError={() => {
+                if (imageUrl && !imageFailed) setImageFailed(true);
+              }}
+            />
           </View>
 
           <Text style={styles.name}>{person.name}</Text>
@@ -127,17 +125,6 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 3 / 4,
     backgroundColor: colors.bg,
-  },
-  placeholder: {
-    width: '100%',
-    aspectRatio: 3 / 4,
-    backgroundColor: colors.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderText: {
-    fontSize: type.meta,
-    color: colors.textDim,
   },
   name: {
     fontSize: type.title,

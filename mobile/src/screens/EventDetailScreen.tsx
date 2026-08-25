@@ -24,6 +24,9 @@ import { getEventImageUrl } from '@/utils/eventImage';
 import { eventCityName } from '@/utils/city';
 import FavoriteButton from '@/components/FavoriteButton';
 import { getEventShareUrl } from '@/utils/share';
+import { findOrgEventByRouteId } from '@/utils/canonicalToLegacy';
+import { loadSessionCategories } from '@/utils/eventCategoryPrefs';
+import { PLACEHOLDER_IMAGE_URL } from '@/utils/placeholderImage';
 
 type Status = 'loading' | 'success' | 'error';
 
@@ -43,8 +46,12 @@ export default function EventDetailScreen() {
 
     try {
       setStatus('loading');
-      const events = await getOrgData();
-      const found = events.find((item) => String(item.actId) === id);
+      const categories = (await loadSessionCategories()) ?? undefined;
+      const events = await getOrgData({
+        id: String(id),
+        categories,
+      });
+      const found = findOrgEventByRouteId(events, String(id));
 
       if (!found) {
         setErrorMessage('找不到這個活動');
@@ -70,7 +77,8 @@ export default function EventDetailScreen() {
   }, [load]);
 
   const imageUrl = event ? getEventImageUrl(event.imageUrl) : null;
-  const showImage = Boolean(imageUrl) && !imageFailed;
+  const displayUrl =
+    imageUrl && !imageFailed ? imageUrl : PLACEHOLDER_IMAGE_URL;
   const city = event ? eventCityName(event) : null;
 
   return (
@@ -100,21 +108,17 @@ export default function EventDetailScreen() {
       {status === 'success' && event && (
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.mediaFrame}>
-            {showImage ? (
-              <Image
-                source={{ uri: imageUrl as string }}
-                style={styles.image}
-                resizeMode="cover"
-                onError={() => setImageFailed(true)}
-              />
-            ) : (
-              <View style={styles.placeholder}>
-                <Text style={styles.placeholderText}>無圖片</Text>
-              </View>
-            )}
+            <Image
+              source={{ uri: displayUrl }}
+              style={styles.image}
+              resizeMode="cover"
+              onError={() => {
+                if (imageUrl && !imageFailed) setImageFailed(true);
+              }}
+            />
             <View style={styles.heart}>
               <FavoriteButton
-                eventId={String(event.actId)}
+                eventId={event.id}
                 extra={{
                   eventTitle: event.actName,
                   eventStartDate: toISODateTime(event.startTime),
@@ -157,7 +161,7 @@ export default function EventDetailScreen() {
               pressed && styles.linkPressed,
             ]}
             onPress={() => {
-              const url = getEventShareUrl(event.actId);
+              const url = getEventShareUrl(event.id);
               void Share.share({
                 title: event.actName,
                 message:
@@ -214,17 +218,6 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 16 / 9,
     backgroundColor: colors.placeholder,
-  },
-  placeholder: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-    backgroundColor: colors.placeholder,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderText: {
-    fontSize: type.meta,
-    color: colors.textDim,
   },
   cityLabel: {
     marginTop: space.sm,

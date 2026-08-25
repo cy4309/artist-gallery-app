@@ -7,6 +7,8 @@ import { colors, radius, space, type } from '@/theme/tokens';
 import { eventCityName } from '@/utils/city';
 import { formatEventDateRange, toISODateTime } from '@/utils/formatDate';
 import { getEventImageUrl } from '@/utils/eventImage';
+import { getEventCategoryLabel } from '@/utils/eventCategories';
+import { PLACEHOLDER_IMAGE_URL } from '@/utils/placeholderImage';
 
 type EventCardProps = {
   event: OrgEvent;
@@ -16,29 +18,32 @@ type EventCardProps = {
 export default function EventCard({ event, onPress }: EventCardProps) {
   const imageUrl = getEventImageUrl(event.imageUrl);
   const [imageFailed, setImageFailed] = useState(false);
-  const showImage = Boolean(imageUrl) && !imageFailed;
+  const displayUrl =
+    imageUrl && !imageFailed ? imageUrl : PLACEHOLDER_IMAGE_URL;
   const city = eventCityName(event);
+  const categoryLabel = getEventCategoryLabel(event);
 
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
-      {showImage ? (
-        <Image
-          source={{ uri: imageUrl as string }}
-          style={styles.image}
-          resizeMode="cover"
-          onError={() => setImageFailed(true)}
-        />
-      ) : (
-        <View style={styles.placeholder}>
-          <Text style={styles.placeholderText}>無圖片</Text>
+      <Image
+        source={{ uri: displayUrl }}
+        style={styles.image}
+        resizeMode="cover"
+        onError={() => {
+          if (imageUrl && !imageFailed) setImageFailed(true);
+        }}
+      />
+      {categoryLabel ? (
+        <View style={styles.categoryBadge}>
+          <Text style={styles.categoryText}>{categoryLabel}</Text>
         </View>
-      )}
+      ) : null}
       <View style={styles.heart}>
         <FavoriteButton
-          eventId={String(event.actId)}
+          eventId={event.id}
           extra={{
             eventTitle: event.actName,
             eventStartDate: toISODateTime(event.startTime),
@@ -74,6 +79,22 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: colors.border,
   },
+  categoryBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    zIndex: 2,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    borderRadius: 6,
+    paddingHorizontal: space.sm,
+    paddingVertical: 4,
+  },
+  categoryText: {
+    fontSize: type.caption,
+    fontWeight: '600',
+    letterSpacing: 1,
+    color: colors.text,
+  },
   heart: {
     position: 'absolute',
     top: 10,
@@ -88,17 +109,6 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 16 / 9,
     backgroundColor: colors.placeholder,
-  },
-  placeholder: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-    backgroundColor: colors.placeholder,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderText: {
-    fontSize: type.meta,
-    color: colors.textDim,
   },
   body: {
     padding: space.xl,
