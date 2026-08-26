@@ -2,7 +2,6 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, radius, space, type } from '@/theme/tokens';
-import { displayCityName } from '@/utils/city';
 import {
   ALL_EVENT_CATEGORY_IDS,
   EVENT_CATEGORY_OPTIONS,
@@ -10,21 +9,24 @@ import {
 } from '@/utils/eventCategories';
 
 type EventCategoryPickerProps = {
-  city: string;
   selected: EventCategoryId[];
   onChange: (next: EventCategoryId[]) => void;
   onConfirm: (selected: EventCategoryId[]) => void;
-  onCancel: () => void;
+  onCancel?: () => void;
   loading?: boolean;
+  /** false = 只存類型，尚未載入列表（先類別再城市） */
+  confirmLoadsData?: boolean;
+  allowCancel?: boolean;
 };
 
 export default function EventCategoryPicker({
-  city,
   selected,
   onChange,
   onConfirm,
   onCancel,
   loading = false,
+  confirmLoadsData = false,
+  allowCancel = true,
 }: EventCategoryPickerProps) {
   const selectedSet = new Set(selected);
   const allSelected = selected.length === ALL_EVENT_CATEGORY_IDS.length;
@@ -42,20 +44,21 @@ export default function EventCategoryPicker({
       <View style={styles.card}>
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.label}>已選縣市</Text>
-            <Text style={styles.city}>{displayCityName(city) || city}</Text>
+            <Text style={styles.title}>選擇活動類型</Text>
             <Text style={styles.hint}>
-              請勾選想看的活動類型（預設不選），確認後再載入
+              請勾選想看的類型（預設不選），確認後再選縣市
             </Text>
           </View>
-          <Pressable
-            onPress={onCancel}
-            hitSlop={8}
-            disabled={loading}
-            style={({ pressed }) => [styles.close, pressed && styles.pressed]}
-          >
-            <Text style={styles.closeText}>✕</Text>
-          </Pressable>
+          {allowCancel && onCancel ? (
+            <Pressable
+              onPress={onCancel}
+              hitSlop={8}
+              disabled={loading}
+              style={({ pressed }) => [styles.close, pressed && styles.pressed]}
+            >
+              <Text style={styles.closeText}>✕</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         <View style={styles.actions}>
@@ -113,7 +116,11 @@ export default function EventCategoryPicker({
           onPress={() => onConfirm(selected)}
         >
           <Text style={styles.confirmText}>
-            {loading ? '載入中…' : '確認載入'}
+            {loading
+              ? '載入中…'
+              : confirmLoadsData
+                ? '確認載入'
+                : '確認類型'}
           </Text>
         </Pressable>
       </View>
@@ -147,12 +154,7 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: space.xs,
   },
-  label: {
-    fontSize: type.caption,
-    color: colors.textMuted,
-    letterSpacing: 1,
-  },
-  city: {
+  title: {
     fontSize: type.title,
     fontWeight: '700',
     color: colors.text,

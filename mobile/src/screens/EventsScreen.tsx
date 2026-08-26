@@ -1,7 +1,9 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Pressable,
   StyleSheet,
   Text,
@@ -20,6 +22,7 @@ import {
   EventSearchPanel,
   EventSearchTrigger,
 } from '@/components/EventSearchBar';
+import ScrollToTopButton from '@/components/ScrollToTopButton';
 import { colors, space, type } from '@/theme/tokens';
 import { OrgEvent } from '@/types/orgEvent';
 import { CITY_ORDER } from '@/utils/city';
@@ -31,12 +34,17 @@ import {
 } from '@/utils/eventCategoryPrefs';
 import { eventRouteSegment } from '@/utils/eventId';
 
+const SCROLL_TOP_THRESHOLD = 480;
+
 export default function EventsScreen() {
+  const listRef = useRef<FlatList<OrgEvent>>(null);
+  const [bootstrapped, setBootstrapped] = useState(false);
   const [selectedCity, setSelectedCity] = useState(ALL_CITIES);
-  const [pickingCategories, setPickingCategories] = useState(false);
+  const [pickingCategories, setPickingCategories] = useState(true);
   const [selectedCategories, setSelectedCategories] = useState<
     EventCategoryId[]
   >([]);
+  const [hasSavedCategories, setHasSavedCategories] = useState(false);
   const [orgData, setOrgData] = useState<OrgEvent[]>([]);
   const [orgLoading, setOrgLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -46,8 +54,30 @@ export default function EventsScreen() {
   const [catalog, setCatalog] = useState<OrgEvent[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [catalogReady, setCatalogReady] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const cities = useMemo(() => [...CITY_ORDER], []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const saved = await loadSessionCategories();
+      if (cancelled) return;
+      if (saved && saved.length > 0) {
+        setSelectedCategories(saved);
+        setHasSavedCategories(true);
+        setPickingCategories(false);
+      } else {
+        setSelectedCategories([]);
+        setHasSavedCategories(false);
+        setPickingCategories(true);
+      }
+      setBootstrapped(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const searchResults = useMemo(
     () => filterEventsByKeyword(catalog, searchQuery),
@@ -61,6 +91,11 @@ export default function EventsScreen() {
 
   const hasSearch = searchQuery.trim().length > 0;
   const listEvents = hasSearch ? searchResults : cityFiltered;
+
+  const resolveCategories = useCallback(async (): Promise<EventCategoryId[]> => {
+    if (selectedCategories.length > 0) return selectedCategories;
+    return (await loadSessionCategories()) ?? [];
+  }, [selectedCategories]);
 
   const loadEvents = useCallback(
     async (city: string, categories: EventCategoryId[]) => {
@@ -122,54 +157,79 @@ export default function EventsScreen() {
   };
 
   const handleSelectCity = async (city: string) => {
+    const categories = await resolveCategories();
+    if (categories.length === 0) {
+      setPickingCategories(true);
+      return;
+    }
+
     setSelectedCity(city);
     setHasConfirmed(false);
     setOrgData([]);
     setSearchQuery('');
-
-    const saved = await loadSessionCategories();
-    if (saved && saved.length > 0) {
-      setSelectedCategories(saved);
-      void loadEvents(city, saved);
-      return;
-    }
-
-    setSelectedCategories([]);
-    setPickingCategories(true);
+    setShowScrollTop(false);
+    void loadEvents(city, categories);
   };
 
   const handleCancelPick = () => {
-    setPickingCategories(false);
+    if (hasSavedCategories) {
+      setPickingCategories(false);
+    }
   };
 
   const handleConfirmCategories = async (categories: EventCategoryId[]) => {
     if (categories.length === 0) return;
     setSelectedCategories(categories);
     await saveSessionCategories(categories);
-    await loadEvents(selectedCity, categories);
+    setHasSavedCategories(true);
+    setPickingCategories(false);
+
+    if (hasConfirmed) {
+      await loadEvents(selectedCity, categories);
+    }
   };
 
   const handleChangeCategories = async () => {
     const saved = await loadSessionCategories();
     setSelectedCategories(saved && saved.length > 0 ? saved : []);
     setPickingCategories(true);
-    setHasConfirmed(false);
-    setOrgData([]);
     setSearchQuery('');
     setSearchOpen(false);
+    setShowScrollTop(false);
   };
+
+  const onListScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    setShowScrollTop(event.nativeEvent.contentOffset.y > SCROLL_TOP_THRESHOLD);
+  };
+
+  const scrollToTop = () => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    setShowScrollTop(false);
+  };
+
+  if (!bootstrapped) {
+    return (
+      <SafeAreaView style={styles.container} edges={['bottom']}>
+        <StatusBar style="light" />
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.border} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (pickingCategories && !hasSearch) {
     return (
       <>
         <StatusBar style="light" />
         <EventCategoryPicker
-          city={selectedCity === ALL_CITIES ? '全部縣市' : selectedCity}
           selected={selectedCategories}
           onChange={setSelectedCategories}
           onConfirm={handleConfirmCategories}
           onCancel={handleCancelPick}
           loading={orgLoading}
+          confirmLoadsData={hasConfirmed}
+          allowCancel={hasSavedCategories}
         />
       </>
     );
@@ -193,7 +253,7 @@ export default function EventsScreen() {
       <View style={styles.header}>
         <Text style={styles.heading}>活動</Text>
         <View style={styles.headerRight}>
-          {hasConfirmed || hasSearch ? (
+          {hasSavedCategories || hasConfirmed || hasSearch ? (
             <Pressable onPress={handleChangeCategories} hitSlop={8}>
               <Text style={styles.changeType}>變更類型</Text>
             </Pressable>
@@ -223,7 +283,7 @@ export default function EventsScreen() {
         <View style={styles.center}>
           <Text style={styles.promptTitle}>選擇縣市開始瀏覽</Text>
           <Text style={styles.centerText}>
-            也可直接用上方搜尋；第一次選縣市時會請你選活動類型
+            也可直接用上方搜尋；請先確認活動類型再選縣市
           </Text>
         </View>
       )}
@@ -268,6 +328,7 @@ export default function EventsScreen() {
 
       {listEvents.length > 0 && (hasSearch || hasConfirmed) && (
         <FlatList
+          ref={listRef}
           data={listEvents}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
@@ -279,8 +340,12 @@ export default function EventsScreen() {
             />
           )}
           contentContainerStyle={styles.list}
+          onScroll={onListScroll}
+          scrollEventThrottle={16}
         />
       )}
+
+      <ScrollToTopButton visible={showScrollTop} onPress={scrollToTop} />
     </SafeAreaView>
   );
 }
