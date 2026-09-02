@@ -13,9 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/auth/AuthContext';
 import { fetchFavoriteList, FavoriteRecord } from '@/api/favorites';
-import FavoriteButton from '@/components/FavoriteButton';
-import { colors, radius, space, type } from '@/theme/tokens';
-import { formatEventDateRange } from '@/utils/formatDate';
+import FavoriteEventCard from '@/components/FavoriteEventCard';
+import { colors, space, type } from '@/theme/tokens';
 import { isEventEnded, sortFavoritesLikeWeb } from '@/utils/favorites';
 import { eventRouteSegment, favoritesInclude } from '@/utils/eventId';
 
@@ -60,6 +59,9 @@ export default function FavoritesScreen() {
       <StatusBar style="light" />
       <View style={styles.header}>
         <Text style={styles.heading}>收藏</Text>
+        {status === 'success' && items.length > 0 ? (
+          <Text style={styles.hint}>進行中優先 · 已結束置底</Text>
+        ) : null}
       </View>
 
       {(authLoading || status === 'loading' || status === 'idle') && user ? (
@@ -90,49 +92,15 @@ export default function FavoritesScreen() {
           data={items}
           keyExtractor={(item) => String(item.eventId)}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => {
-            const ended = isEventEnded(item.eventEndDate);
-            return (
-              <Pressable
-                style={[styles.card, ended && styles.cardEnded]}
-                onPress={() =>
-                  router.push(`/events/${eventRouteSegment(String(item.eventId))}`)
-                }
-              >
-                <View style={styles.cardHeader}>
-                  <Text
-                    style={[styles.cardTitle, ended && styles.textEnded]}
-                    numberOfLines={2}
-                  >
-                    {item.eventTitle}
-                  </Text>
-                  <FavoriteButton
-                    eventId={String(item.eventId)}
-                    extra={{
-                      eventTitle: item.eventTitle,
-                      eventStartDate: item.eventStartDate,
-                      eventEndDate: item.eventEndDate,
-                      eventLocation: item.eventLocation,
-                      eventUrl: item.eventUrl,
-                      imageUrl: item.imageUrl,
-                    }}
-                  />
-                </View>
-                {ended ? <Text style={styles.endedBadge}>已結束</Text> : null}
-                <Text style={[styles.meta, ended && styles.textEnded]}>
-                  {formatEventDateRange(item.eventStartDate, item.eventEndDate)}
-                </Text>
-                {item.eventLocation ? (
-                  <Text
-                    style={[styles.meta, ended && styles.textEnded]}
-                    numberOfLines={1}
-                  >
-                    {item.eventLocation}
-                  </Text>
-                ) : null}
-              </Pressable>
-            );
-          }}
+          renderItem={({ item }) => (
+            <FavoriteEventCard
+              item={item}
+              ended={isEventEnded(item.eventEndDate)}
+              onPress={() =>
+                router.push(`/events/${eventRouteSegment(String(item.eventId))}`)
+              }
+            />
+          )}
         />
       ) : null}
     </SafeAreaView>
@@ -148,6 +116,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.xl,
     paddingTop: space.lg,
     paddingBottom: space.lg,
+    gap: space.xs,
   },
   heading: {
     fontSize: type.heading,
@@ -155,49 +124,15 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: colors.text,
   },
+  hint: {
+    fontSize: type.caption,
+    color: colors.textDim,
+  },
   list: {
     paddingHorizontal: space.xl,
     paddingTop: space.lg,
     paddingBottom: space.xxxl,
     gap: space.xl,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderWidth: 3,
-    borderColor: colors.border,
-    borderRadius: radius.card,
-    padding: space.lg,
-    gap: space.sm,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: space.md,
-  },
-  cardTitle: {
-    flex: 1,
-    fontSize: type.body,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  cardEnded: {
-    opacity: 0.55,
-    borderColor: colors.borderMuted,
-  },
-  textEnded: {
-    color: colors.textDim,
-  },
-  endedBadge: {
-    alignSelf: 'flex-start',
-    fontSize: type.caption,
-    fontWeight: '700',
-    letterSpacing: 2,
-    color: colors.textDim,
-  },
-  meta: {
-    fontSize: type.caption,
-    color: colors.textMuted,
   },
   center: {
     flex: 1,

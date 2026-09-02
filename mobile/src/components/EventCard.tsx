@@ -8,6 +8,7 @@ import { eventCityName } from '@/utils/city';
 import { formatEventDateRange, toISODateTime } from '@/utils/formatDate';
 import { getEventImageUrl } from '@/utils/eventImage';
 import { getEventCategoryLabel } from '@/utils/eventCategories';
+import EventImageSourceBadge from '@/components/EventImageSourceBadge';
 import { PLACEHOLDER_IMAGE_URL } from '@/utils/placeholderImage';
 
 type EventCardProps = {
@@ -41,6 +42,7 @@ export default function EventCard({ event, onPress }: EventCardProps) {
           <Text style={styles.categoryText}>{categoryLabel}</Text>
         </View>
       ) : null}
+      <EventImageSourceBadge imageSource={event.imageSource} />
       <View style={styles.heart}>
         <FavoriteButton
           eventId={event.id}

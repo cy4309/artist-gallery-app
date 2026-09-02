@@ -13,17 +13,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, space, type } from '@/theme/tokens';
 
 export const ALL_CITIES = '全部';
+export const NO_CITY_SELECTED = '';
 
 type CityPickerProps = {
   cities: string[];
   selected: string;
   onSelect: (city: string) => void;
+  placeholder?: string;
 };
 
 export default function CityPicker({
   cities,
   selected,
   onSelect,
+  placeholder = '請選擇縣市…',
 }: CityPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -45,6 +48,9 @@ export default function CityPicker({
     close();
   };
 
+  const hasSelection = Boolean(selected);
+  const displayLabel = hasSelection ? selected : placeholder;
+
   return (
     <>
       <View style={styles.triggerWrap}>
@@ -52,11 +58,20 @@ export default function CityPicker({
           style={({ pressed }) => [styles.trigger, pressed && styles.pressed]}
           onPress={() => setOpen(true)}
           accessibilityRole="button"
-          accessibilityLabel={`選擇縣市，目前 ${selected}`}
+          accessibilityLabel={
+            hasSelection ? `選擇縣市，目前 ${selected}` : '選擇縣市'
+          }
         >
           <View>
             <Text style={styles.triggerLabel}>縣市</Text>
-            <Text style={styles.triggerValue}>{selected}</Text>
+            <Text
+              style={[
+                styles.triggerValue,
+                !hasSelection && styles.triggerPlaceholder,
+              ]}
+            >
+              {displayLabel}
+            </Text>
           </View>
           <Text style={styles.triggerChevron}>選擇 ▾</Text>
         </Pressable>
@@ -149,6 +164,11 @@ const styles = StyleSheet.create({
     fontSize: type.heading,
     fontWeight: '700',
     color: colors.text,
+  },
+  triggerPlaceholder: {
+    fontSize: type.body,
+    fontWeight: '600',
+    color: colors.textMuted,
   },
   triggerChevron: {
     fontSize: type.meta,

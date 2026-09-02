@@ -10,7 +10,7 @@ import { colors, radius, space, type } from '@/theme/tokens';
 type EntryItem = {
   title: string;
   description: string;
-  route: '/events' | '/interviews' | '/favorites';
+  route: '/events' | '/interviews' | '/favorites' | '/about';
 };
 
 const COVER_IMAGE = `${env.apiUrl}/images/qingshan-king-festival-1.jpg`;
@@ -30,6 +30,11 @@ const allEntries: EntryItem[] = [
     title: '專欄',
     description: '人物專訪',
     route: '/interviews',
+  },
+  {
+    title: '關於',
+    description: '認識 CYC Zine',
+    route: '/about',
   },
 ];
 

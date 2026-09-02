@@ -83,3 +83,32 @@ export function formatEventDateRange(startTime?: string, endTime?: string): stri
 
   return start || end;
 }
+
+/** 篩選用 YYYY-MM-DD ↔ Date */
+export function toFilterDateString(date: Date): string {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+export function parseFilterDateString(value?: string): Date | null {
+  if (!value?.trim()) return null;
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const parsed = new Date(
+    Number(match[1]),
+    Number(match[2]) - 1,
+    Number(match[3])
+  );
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+/** 篩選日期顯示（2026/09/02） */
+export function formatFilterDateLabel(value?: string): string {
+  if (!value?.trim()) return '';
+  const date = parseFilterDateString(value);
+  if (!date) return value;
+  return new Intl.DateTimeFormat('zh-TW', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}

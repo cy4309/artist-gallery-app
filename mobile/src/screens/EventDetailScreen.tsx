@@ -23,6 +23,7 @@ import { formatEventDateRange, toISODateTime } from '@/utils/formatDate';
 import { getEventImageUrl } from '@/utils/eventImage';
 import { eventCityName } from '@/utils/city';
 import FavoriteButton from '@/components/FavoriteButton';
+import EventImageSourceBadge from '@/components/EventImageSourceBadge';
 import { getEventShareUrl } from '@/utils/share';
 import { findOrgEventByRouteId } from '@/utils/canonicalToLegacy';
 import { loadSessionCategories } from '@/utils/eventCategoryPrefs';
@@ -116,6 +117,7 @@ export default function EventDetailScreen() {
                 if (imageUrl && !imageFailed) setImageFailed(true);
               }}
             />
+            <EventImageSourceBadge imageSource={event.imageSource} />
             <View style={styles.heart}>
               <FavoriteButton
                 eventId={event.id}
@@ -202,6 +204,7 @@ const styles = StyleSheet.create({
     gap: space.md,
   },
   mediaFrame: {
+    position: 'relative',
     borderRadius: radius.card,
     overflow: 'hidden',
     borderWidth: 3,

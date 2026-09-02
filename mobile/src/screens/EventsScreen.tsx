@@ -15,18 +15,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getOrgData } from '@/api/org';
 import { ApiError } from '@/api/errors';
-import CityPicker, { ALL_CITIES } from '@/components/CityPicker';
+import BackButton from '@/components/BackButton';
+import CityPicker, { ALL_CITIES, NO_CITY_SELECTED } from '@/components/CityPicker';
 import EventCard from '@/components/EventCard';
 import EventCategoryPicker from '@/components/EventCategoryPicker';
 import {
-  EventSearchPanel,
+  EventAdvancedSearchPanel,
+  EventAdvancedSearchTrigger,
+  EventSearchInline,
   EventSearchTrigger,
 } from '@/components/EventSearchBar';
 import ScrollToTopButton from '@/components/ScrollToTopButton';
 import { colors, space, type } from '@/theme/tokens';
 import { OrgEvent } from '@/types/orgEvent';
-import { CITY_ORDER } from '@/utils/city';
-import { filterEventsByKeyword } from '@/utils/eventSearch';
+import { CITY_ORDER, displayCityName } from '@/utils/city';
+import { hasEventDateFilter } from '@/utils/eventDateFilter';
+import { filterEvents, hasKeywordSearch } from '@/utils/eventSearch';
 import { EventCategoryId } from '@/utils/eventCategories';
 import {
   loadSessionCategories,
@@ -39,7 +43,7 @@ const SCROLL_TOP_THRESHOLD = 480;
 export default function EventsScreen() {
   const listRef = useRef<FlatList<OrgEvent>>(null);
   const [bootstrapped, setBootstrapped] = useState(false);
-  const [selectedCity, setSelectedCity] = useState(ALL_CITIES);
+  const [selectedCity, setSelectedCity] = useState(NO_CITY_SELECTED);
   const [pickingCategories, setPickingCategories] = useState(true);
   const [selectedCategories, setSelectedCategories] = useState<
     EventCategoryId[]
@@ -50,7 +54,12 @@ export default function EventsScreen() {
   const [errorMessage, setErrorMessage] = useState('');
   const [hasConfirmed, setHasConfirmed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [keywordOpen, setKeywordOpen] = useState(false);
+  const [draftDateFrom, setDraftDateFrom] = useState('');
+  const [draftDateTo, setDraftDateTo] = useState('');
+  const [appliedDateFrom, setAppliedDateFrom] = useState('');
+  const [appliedDateTo, setAppliedDateTo] = useState('');
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [catalog, setCatalog] = useState<OrgEvent[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [catalogReady, setCatalogReady] = useState(false);
@@ -79,18 +88,36 @@ export default function EventsScreen() {
     };
   }, []);
 
-  const searchResults = useMemo(
-    () => filterEventsByKeyword(catalog, searchQuery),
+  const dateFilter = useMemo(
+    () => ({ from: appliedDateFrom, to: appliedDateTo }),
+    [appliedDateFrom, appliedDateTo]
+  );
+
+  const dateDraftDirty =
+    draftDateFrom !== appliedDateFrom || draftDateTo !== appliedDateTo;
+
+  const clearDateFilters = useCallback(() => {
+    setDraftDateFrom('');
+    setDraftDateTo('');
+    setAppliedDateFrom('');
+    setAppliedDateTo('');
+  }, []);
+
+  const hasKeyword = hasKeywordSearch(searchQuery);
+  const hasDateFilter = hasEventDateFilter(dateFilter);
+  const showCityBrowse = hasConfirmed && !hasKeyword;
+
+  const keywordResults = useMemo(
+    () => filterEvents(catalog, { query: searchQuery }),
     [catalog, searchQuery]
   );
 
-  const cityFiltered = useMemo(
-    () => filterEventsByKeyword(orgData, searchQuery),
-    [orgData, searchQuery]
+  const browseResults = useMemo(
+    () => filterEvents(orgData, { date: dateFilter }),
+    [orgData, dateFilter]
   );
 
-  const hasSearch = searchQuery.trim().length > 0;
-  const listEvents = hasSearch ? searchResults : cityFiltered;
+  const listEvents = hasKeyword ? keywordResults : browseResults;
 
   const resolveCategories = useCallback(async (): Promise<EventCategoryId[]> => {
     if (selectedCategories.length > 0) return selectedCategories;
@@ -142,11 +169,27 @@ export default function EventsScreen() {
     }
   }, [catalog, catalogLoading, catalogReady]);
 
-  const toggleSearch = () => {
-    setSearchOpen((open) => {
+  const toggleKeyword = () => {
+    setKeywordOpen((open) => {
       const next = !open;
       if (!next) setSearchQuery('');
-      else void ensureCatalog();
+      if (next) {
+        setAdvancedOpen(false);
+        void ensureCatalog();
+      }
+      return next;
+    });
+  };
+
+  const toggleAdvanced = () => {
+    setAdvancedOpen((open) => {
+      const next = !open;
+      if (next) {
+        setDraftDateFrom(appliedDateFrom);
+        setDraftDateTo(appliedDateTo);
+        setKeywordOpen(false);
+        setSearchQuery('');
+      }
       return next;
     });
   };
@@ -154,6 +197,21 @@ export default function EventsScreen() {
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     if (value.trim()) void ensureCatalog();
+  };
+
+  const handleConfirmDates = () => {
+    setAppliedDateFrom(draftDateFrom);
+    setAppliedDateTo(draftDateTo);
+  };
+
+  const handleBackToCitySelect = () => {
+    setHasConfirmed(false);
+    setSelectedCity(NO_CITY_SELECTED);
+    setOrgData([]);
+    clearDateFilters();
+    setAdvancedOpen(false);
+    setShowScrollTop(false);
+    setErrorMessage('');
   };
 
   const handleSelectCity = async (city: string) => {
@@ -164,9 +222,10 @@ export default function EventsScreen() {
     }
 
     setSelectedCity(city);
-    setHasConfirmed(false);
-    setOrgData([]);
     setSearchQuery('');
+    clearDateFilters();
+    setKeywordOpen(false);
+    setAdvancedOpen(false);
     setShowScrollTop(false);
     void loadEvents(city, categories);
   };
@@ -184,7 +243,7 @@ export default function EventsScreen() {
     setHasSavedCategories(true);
     setPickingCategories(false);
 
-    if (hasConfirmed) {
+    if (hasConfirmed && selectedCity) {
       await loadEvents(selectedCity, categories);
     }
   };
@@ -192,10 +251,16 @@ export default function EventsScreen() {
   const handleChangeCategories = async () => {
     const saved = await loadSessionCategories();
     setSelectedCategories(saved && saved.length > 0 ? saved : []);
+    setHasConfirmed(false);
+    setSelectedCity(NO_CITY_SELECTED);
+    setOrgData([]);
     setPickingCategories(true);
     setSearchQuery('');
-    setSearchOpen(false);
+    clearDateFilters();
+    setKeywordOpen(false);
+    setAdvancedOpen(false);
     setShowScrollTop(false);
+    setErrorMessage('');
   };
 
   const onListScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -206,6 +271,67 @@ export default function EventsScreen() {
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
     setShowScrollTop(false);
   };
+
+  const cityLabel =
+    selectedCity === ALL_CITIES
+      ? ALL_CITIES
+      : displayCityName(selectedCity) || selectedCity;
+
+  const headerChangeCategories = (
+    <Pressable onPress={handleChangeCategories} hitSlop={8}>
+      <Text style={styles.changeType}>變更類型</Text>
+    </Pressable>
+  );
+
+  const keywordSearchControls = (showChangeCategories = true) => (
+    <>
+      <View style={styles.searchRow}>
+        <EventSearchTrigger expanded={keywordOpen} onToggle={toggleKeyword} />
+        <EventSearchInline
+          expanded={keywordOpen}
+          value={searchQuery}
+          onChange={handleSearchChange}
+        />
+      </View>
+      <View style={styles.headerRight}>
+        {hasKeyword ? (
+          <Text style={styles.count}>{`${listEvents.length} 筆`}</Text>
+        ) : null}
+        {showChangeCategories ? headerChangeCategories : null}
+      </View>
+    </>
+  );
+
+  const keywordSearchHint =
+    keywordOpen && !hasKeyword ? (
+      <Text style={styles.searchHint}>
+        輸入關鍵字搜尋全站活動；與縣市瀏覽互斥
+      </Text>
+    ) : null;
+
+  const renderEventList = () => (
+    <FlatList
+      ref={listRef}
+      data={listEvents}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <EventCard
+          event={item}
+          onPress={() => router.push(`/events/${eventRouteSegment(item.id)}`)}
+        />
+      )}
+      contentContainerStyle={styles.list}
+      onScroll={onListScroll}
+      scrollEventThrottle={16}
+    />
+  );
+
+  const renderInlineLoading = (message: string) => (
+    <View style={styles.center}>
+      <ActivityIndicator size="large" color={colors.border} />
+      <Text style={styles.centerText}>{message}</Text>
+    </View>
+  );
 
   if (!bootstrapped) {
     return (
@@ -218,7 +344,7 @@ export default function EventsScreen() {
     );
   }
 
-  if (pickingCategories && !hasSearch) {
+  if (pickingCategories && !hasKeyword) {
     return (
       <>
         <StatusBar style="light" />
@@ -235,114 +361,130 @@ export default function EventsScreen() {
     );
   }
 
-  if (orgLoading || (hasSearch && catalogLoading)) {
+  // 縣市載入中（非搜尋模式）— 此時無輸入框，全屏 loading 可接受
+  if (orgLoading && !hasKeyword) {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <StatusBar style="light" />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.border} />
-          <Text style={styles.centerText}>載入活動中…</Text>
-        </View>
+        {renderInlineLoading('載入活動中…')}
       </SafeAreaView>
     );
   }
 
+  // 縣市列表模式：獨立 header（返回 + 進階篩選）
+  if (showCityBrowse) {
+    return (
+      <SafeAreaView style={styles.container} edges={['bottom']}>
+        <StatusBar style="light" />
+        <View style={styles.header}>
+          <BackButton onPress={handleBackToCitySelect} />
+          <View style={styles.headerRight}>
+            {headerChangeCategories}
+            <EventAdvancedSearchTrigger
+              expanded={advancedOpen}
+              onToggle={toggleAdvanced}
+              active={hasDateFilter}
+            />
+            <Text style={styles.count}>{`${listEvents.length} 筆`}</Text>
+          </View>
+        </View>
+
+        <EventAdvancedSearchPanel
+          expanded={advancedOpen}
+          dateFrom={draftDateFrom}
+          dateTo={draftDateTo}
+          onDateFromChange={setDraftDateFrom}
+          onDateToChange={setDraftDateTo}
+          onConfirmDates={handleConfirmDates}
+          confirmDatesDisabled={!dateDraftDirty}
+          onClearDates={clearDateFilters}
+          dateHint={`${cityLabel} · 篩選與活動期間重疊的項目`}
+        />
+
+        {errorMessage ? (
+          <View style={styles.center}>
+            <Text style={styles.errorTitle}>載入失敗</Text>
+            <Text style={styles.centerText}>{errorMessage}</Text>
+            <Pressable
+              style={styles.retryButton}
+              onPress={() => loadEvents(selectedCity, selectedCategories)}
+            >
+              <Text style={styles.retryText}>再試一次</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {!errorMessage && orgData.length === 0 ? (
+          <View style={styles.center}>
+            <Text style={styles.errorTitle}>目前沒有符合的活動</Text>
+            <Text style={styles.centerText}>
+              {cityLabel} · 試試其他縣市或變更類型
+            </Text>
+          </View>
+        ) : null}
+
+        {!errorMessage &&
+        orgData.length > 0 &&
+        listEvents.length === 0 &&
+        hasDateFilter ? (
+          <View style={styles.center}>
+            <Text style={styles.errorTitle}>沒有符合日期的活動</Text>
+            <Text style={styles.centerText}>試試調整日期區間或清除篩選</Text>
+          </View>
+        ) : null}
+
+        {!errorMessage && listEvents.length > 0 ? renderEventList() : null}
+        <ScrollToTopButton visible={showScrollTop} onPress={scrollToTop} />
+      </SafeAreaView>
+    );
+  }
+
+  // 合併布局：選縣市 + 關鍵字搜尋共用同一頂部搜尋列，輸入框不因 hasKeyword 切換而卸載
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <Text style={styles.heading}>活動</Text>
-        <View style={styles.headerRight}>
-          {hasSavedCategories || hasConfirmed || hasSearch ? (
-            <Pressable onPress={handleChangeCategories} hitSlop={8}>
-              <Text style={styles.changeType}>變更類型</Text>
-            </Pressable>
-          ) : null}
-          <Text style={styles.count}>
-            {hasConfirmed || hasSearch ? `${listEvents.length} 筆` : ' '}
-          </Text>
-          <EventSearchTrigger expanded={searchOpen} onToggle={toggleSearch} />
-        </View>
+        {hasConfirmed && hasKeyword ? (
+          <BackButton
+            onPress={() => {
+              setSearchQuery('');
+              setKeywordOpen(false);
+            }}
+          />
+        ) : (
+          <Text style={styles.heading}>活動</Text>
+        )}
+        <View style={styles.headerMain}>{keywordSearchControls(!hasConfirmed)}</View>
       </View>
 
-      <EventSearchPanel
-        expanded={searchOpen}
-        value={searchQuery}
-        onChange={handleSearchChange}
-      />
+      {keywordSearchHint}
 
-      {!hasSearch && (
-        <CityPicker
-          cities={cities}
-          selected={selectedCity}
-          onSelect={handleSelectCity}
-        />
-      )}
-
-      {!hasSearch && !hasConfirmed && (
-        <View style={styles.center}>
-          <Text style={styles.promptTitle}>選擇縣市開始瀏覽</Text>
-          <Text style={styles.centerText}>
-            也可直接用上方搜尋；請先確認活動類型再選縣市
-          </Text>
-        </View>
-      )}
-
-      {!hasSearch && hasConfirmed && errorMessage ? (
-        <View style={styles.center}>
-          <Text style={styles.errorTitle}>載入失敗</Text>
-          <Text style={styles.centerText}>{errorMessage}</Text>
-          <Pressable
-            style={styles.retryButton}
-            onPress={() => loadEvents(selectedCity, selectedCategories)}
-          >
-            <Text style={styles.retryText}>再試一次</Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      {!hasSearch && hasConfirmed && !errorMessage && orgData.length === 0 && (
-        <View style={styles.center}>
-          <Text style={styles.errorTitle}>目前沒有符合的活動</Text>
-          <Text style={styles.centerText}>試試其他縣市或變更類型</Text>
-        </View>
-      )}
-
-      {!hasSearch &&
-        hasConfirmed &&
-        !errorMessage &&
-        orgData.length > 0 &&
-        listEvents.length === 0 && (
+      {hasKeyword ? (
+        catalogLoading && !catalogReady ? (
+          renderInlineLoading('搜尋活動中…')
+        ) : listEvents.length === 0 ? (
           <View style={styles.center}>
-            <Text style={styles.errorTitle}>沒有符合的活動</Text>
-            <Text style={styles.centerText}>試試調整搜尋關鍵字</Text>
+            <Text style={styles.promptTitle}>找不到符合的活動</Text>
+            <Text style={styles.centerText}>試試其他關鍵字</Text>
           </View>
-        )}
-
-      {hasSearch && listEvents.length === 0 && (
-        <View style={styles.center}>
-          <Text style={styles.errorTitle}>找不到符合的活動</Text>
-          <Text style={styles.centerText}>試試其他關鍵字或縣市</Text>
-        </View>
-      )}
-
-      {listEvents.length > 0 && (hasSearch || hasConfirmed) && (
-        <FlatList
-          ref={listRef}
-          data={listEvents}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <EventCard
-              event={item}
-              onPress={() =>
-                router.push(`/events/${eventRouteSegment(item.id)}`)
-              }
-            />
-          )}
-          contentContainerStyle={styles.list}
-          onScroll={onListScroll}
-          scrollEventThrottle={16}
-        />
+        ) : (
+          renderEventList()
+        )
+      ) : (
+        <>
+          <CityPicker
+            cities={cities}
+            selected={selectedCity}
+            onSelect={handleSelectCity}
+            placeholder="請選擇縣市…"
+          />
+          <View style={styles.center}>
+            <Text style={styles.promptTitle}>請選擇縣市開始瀏覽</Text>
+            <Text style={styles.centerText}>
+              也可直接點放大鏡搜尋全站活動；請先確認活動類型再選縣市
+            </Text>
+          </View>
+        </>
       )}
 
       <ScrollToTopButton visible={showScrollTop} onPress={scrollToTop} />
@@ -361,18 +503,36 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: space.xl,
     paddingTop: space.lg,
-    paddingBottom: space.lg,
+    paddingBottom: space.sm,
+    gap: space.sm,
+  },
+  headerMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: space.sm,
+    minWidth: 0,
+  },
+  searchRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    minWidth: 0,
   },
   heading: {
     fontSize: type.heading,
     fontWeight: '700',
     letterSpacing: 2,
     color: colors.text,
+    flexShrink: 0,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.md,
+    flexShrink: 0,
   },
   changeType: {
     fontSize: type.caption,
@@ -383,6 +543,12 @@ const styles = StyleSheet.create({
   count: {
     fontSize: type.meta,
     color: colors.textMuted,
+  },
+  searchHint: {
+    paddingHorizontal: space.xl,
+    paddingBottom: space.sm,
+    fontSize: type.caption,
+    color: colors.textDim,
   },
   list: {
     paddingHorizontal: space.xl,
