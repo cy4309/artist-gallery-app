@@ -10,6 +10,7 @@ import {
   filterInterviews,
   InterviewFilterTag,
 } from '@/data/interviews';
+import { COPY } from '@/content/copy';
 import { colors, space, type } from '@/theme/tokens';
 
 export default function InterviewsScreen() {
@@ -21,10 +22,8 @@ export default function InterviewsScreen() {
       <StatusBar style="light" />
       <View style={styles.header}>
         <View style={styles.headerText}>
-          <Text style={styles.heading}>專欄精選</Text>
-          <Text style={styles.lede}>
-            這裡收錄我們精選的台灣文化人物與故事。
-          </Text>
+          <Text style={styles.heading}>{COPY.interviews.title}</Text>
+          <Text style={styles.lede}>{COPY.interviews.description}</Text>
         </View>
         <Text style={styles.count}>{people.length} 筆</Text>
       </View>

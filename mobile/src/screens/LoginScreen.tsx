@@ -8,6 +8,7 @@ import * as Linking from 'expo-linking';
 
 import { useAuth } from '@/auth/AuthContext';
 import { env } from '@/config/env';
+import { COPY } from '@/content/copy';
 import { User } from '@/types/user';
 import { colors, radius, space, type } from '@/theme/tokens';
 
@@ -93,6 +94,23 @@ export default function LoginScreen() {
         </Pressable>
 
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+
+        <Text style={styles.footer}>
+          {COPY.auth.footerPrefix}
+          <Text
+            style={styles.footerLink}
+            onPress={() => router.push('/privacy')}
+          >
+            {COPY.auth.privacy}
+          </Text>
+          {COPY.auth.and}
+          <Text
+            style={styles.footerLink}
+            onPress={() => router.push('/terms')}
+          >
+            {COPY.auth.terms}
+          </Text>
+        </Text>
       </View>
     </SafeAreaView>
   );
@@ -156,5 +174,16 @@ const styles = StyleSheet.create({
     marginTop: space.md,
     color: colors.danger,
     fontSize: type.meta,
+  },
+  footer: {
+    marginTop: space.xl,
+    fontSize: type.caption,
+    lineHeight: 20,
+    color: colors.textDim,
+    textAlign: 'center',
+  },
+  footerLink: {
+    color: colors.accentSoft,
+    textDecorationLine: 'underline',
   },
 });

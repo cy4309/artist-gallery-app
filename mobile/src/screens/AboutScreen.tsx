@@ -1,8 +1,10 @@
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ABOUT_CONTENT } from '@/content/about';
+import { COPY } from '@/content/copy';
 import { colors, space, type } from '@/theme/tokens';
 
 export default function AboutScreen() {
@@ -35,6 +37,16 @@ export default function AboutScreen() {
           <Text style={styles.contactPrefix}>✉ {ABOUT_CONTENT.contactLabel}：</Text>
           <Pressable onPress={openEmail} hitSlop={8}>
             <Text style={styles.contactEmail}>{ABOUT_CONTENT.contactEmail}</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.links}>
+          <Pressable onPress={() => router.push('/privacy')} hitSlop={8}>
+            <Text style={styles.link}>{COPY.footer.privacy}</Text>
+          </Pressable>
+          <Text style={styles.linkSep}>·</Text>
+          <Pressable onPress={() => router.push('/terms')} hitSlop={8}>
+            <Text style={styles.link}>{COPY.footer.terms}</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -98,5 +110,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.accentSoft,
     textDecorationLine: 'underline',
+  },
+  links: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: space.sm,
+  },
+  link: {
+    fontSize: type.caption,
+    color: colors.textMuted,
+    textDecorationLine: 'underline',
+  },
+  linkSep: {
+    fontSize: type.caption,
+    color: colors.textDim,
   },
 });

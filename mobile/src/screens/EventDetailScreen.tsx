@@ -1,14 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
-  Linking,
-  Platform,
+  FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Pressable,
-  ScrollView,
-  Share,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -17,70 +16,152 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getOrgData } from '@/api/org';
 import { ApiError } from '@/api/errors';
-import { colors, radius, space, type } from '@/theme/tokens';
+import EventDetailSlide from '@/components/EventDetailSlide';
+import { COPY } from '@/content/copy';
+import { colors, space, type } from '@/theme/tokens';
 import { OrgEvent } from '@/types/orgEvent';
-import { formatEventDateRange, toISODateTime } from '@/utils/formatDate';
-import { getEventImageUrl } from '@/utils/eventImage';
-import { eventCityName } from '@/utils/city';
-import FavoriteButton from '@/components/FavoriteButton';
-import EventImageSourceBadge from '@/components/EventImageSourceBadge';
-import { getEventShareUrl } from '@/utils/share';
+import { displayCityName, eventCityName } from '@/utils/city';
 import { findOrgEventByRouteId } from '@/utils/canonicalToLegacy';
 import { loadSessionCategories } from '@/utils/eventCategoryPrefs';
-import { PLACEHOLDER_IMAGE_URL } from '@/utils/placeholderImage';
+import {
+  eventRouteSegment,
+  favoriteIdAliases,
+  toCanonicalId,
+} from '@/utils/eventId';
 
 type Status = 'loading' | 'success' | 'error';
 
+function indexOfRouteId(events: OrgEvent[], rawId: string): number {
+  const id = toCanonicalId(rawId);
+  if (!id) return -1;
+  const aliases = new Set(favoriteIdAliases(id));
+  return events.findIndex(
+    (item) => aliases.has(item.id) || item.id === id
+  );
+}
+
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [status, setStatus] = useState<Status>('loading');
-  const [event, setEvent] = useState<OrgEvent | null>(null);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [imageFailed, setImageFailed] = useState(false);
+  const { width } = useWindowDimensions();
+  const listRef = useRef<FlatList<OrgEvent>>(null);
+  const syncingFromSwipeRef = useRef(false);
 
-  const load = useCallback(async () => {
+  const [status, setStatus] = useState<Status>('loading');
+  const [cityEvents, setCityEvents] = useState<OrgEvent[]>([]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const load = useCallback(async (routeId: string) => {
+    try {
+      setStatus('loading');
+      setErrorMessage('');
+      const categories = (await loadSessionCategories()) ?? undefined;
+      const events = await getOrgData({
+        id: routeId,
+        categories,
+      });
+      const foundIndex = indexOfRouteId(events, routeId);
+
+      if (foundIndex < 0) {
+        setCityEvents([]);
+        setErrorMessage(COPY.events.notFound);
+        setStatus('error');
+        return;
+      }
+
+      setCityEvents(events);
+      setActiveIndex(foundIndex);
+      setStatus('success');
+    } catch (error) {
+      setCityEvents([]);
+      if (error instanceof ApiError) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage(COPY.events.loadError);
+      }
+      setStatus('error');
+    }
+  }, []);
+
+  useEffect(() => {
     if (!id) {
       setErrorMessage('找不到活動 ID');
       setStatus('error');
       return;
     }
 
-    try {
-      setStatus('loading');
-      const categories = (await loadSessionCategories()) ?? undefined;
-      const events = await getOrgData({
-        id: String(id),
-        categories,
-      });
-      const found = findOrgEventByRouteId(events, String(id));
+    const routeId = String(id);
 
-      if (!found) {
-        setErrorMessage('找不到這個活動');
-        setStatus('error');
+    if (cityEvents.length > 0) {
+      const existing = indexOfRouteId(cityEvents, routeId);
+      if (existing >= 0) {
+        if (existing !== activeIndex) {
+          setActiveIndex(existing);
+          requestAnimationFrame(() => {
+            listRef.current?.scrollToIndex({
+              index: existing,
+              animated: false,
+            });
+          });
+        }
         return;
       }
-
-      setEvent(found);
-      setImageFailed(false);
-      setStatus('success');
-    } catch (error) {
-      if (error instanceof ApiError) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage('Unknown error');
-      }
-      setStatus('error');
     }
-  }, [id]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+    if (syncingFromSwipeRef.current) {
+      syncingFromSwipeRef.current = false;
+      return;
+    }
 
-  const imageUrl = event ? getEventImageUrl(event.imageUrl) : null;
-  const displayUrl =
-    imageUrl && !imageFailed ? imageUrl : PLACEHOLDER_IMAGE_URL;
-  const city = event ? eventCityName(event) : null;
+    void load(routeId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to route id / explicit reload
+  }, [id, load]);
+
+  const activeEvent = cityEvents[activeIndex] ?? null;
+  const cityLabel = useMemo(() => {
+    if (!activeEvent) return '';
+    return (
+      displayCityName(eventCityName(activeEvent) ?? activeEvent.cityName) ||
+      activeEvent.cityName
+    );
+  }, [activeEvent]);
+
+  const positionLabel = useMemo(() => {
+    if (!activeEvent || cityEvents.length === 0) return null;
+    return COPY.events.listPositionWithCity
+      .replace('{city}', cityLabel)
+      .replace('{current}', String(activeIndex + 1))
+      .replace('{total}', String(cityEvents.length));
+  }, [activeEvent, activeIndex, cityEvents.length, cityLabel]);
+
+  const syncRouteId = useCallback(
+    (event: OrgEvent) => {
+      const segment = eventRouteSegment(event.id);
+      if (segment === id) return;
+      syncingFromSwipeRef.current = true;
+      router.setParams({ id: segment });
+    },
+    [id]
+  );
+
+  const syncRouteIdRef = useRef(syncRouteId);
+  syncRouteIdRef.current = syncRouteId;
+
+  const goToIndex = (next: number) => {
+    if (next < 0 || next >= cityEvents.length) return;
+    listRef.current?.scrollToIndex({ index: next, animated: true });
+    setActiveIndex(next);
+    syncRouteId(cityEvents[next]);
+  };
+
+  const onMomentumScrollEnd = (
+    event: NativeSyntheticEvent<NativeScrollEvent>
+  ) => {
+    const index = Math.round(event.nativeEvent.contentOffset.x / width);
+    if (index < 0 || index >= cityEvents.length) return;
+    setActiveIndex(index);
+    syncRouteIdRef.current(cityEvents[index]);
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -98,86 +179,90 @@ export default function EventDetailScreen() {
 
       {status === 'error' && (
         <View style={styles.center}>
-          <Text style={styles.errorTitle}>載入失敗</Text>
+          <Text style={styles.errorTitle}>{COPY.events.loadError}</Text>
           <Text style={styles.centerText}>{errorMessage}</Text>
-          <Pressable style={styles.retryButton} onPress={load}>
-            <Text style={styles.retryText}>再試一次</Text>
+          <Pressable
+            style={styles.retryButton}
+            onPress={() => id && load(String(id))}
+          >
+            <Text style={styles.retryText}>{COPY.events.retry}</Text>
           </Pressable>
         </View>
       )}
 
-      {status === 'success' && event && (
-        <ScrollView contentContainerStyle={styles.content}>
-          <View style={styles.mediaFrame}>
-            <Image
-              source={{ uri: displayUrl }}
-              style={styles.image}
-              resizeMode="cover"
-              onError={() => {
-                if (imageUrl && !imageFailed) setImageFailed(true);
-              }}
-            />
-            <EventImageSourceBadge imageSource={event.imageSource} />
-            <View style={styles.heart}>
-              <FavoriteButton
-                eventId={event.id}
-                extra={{
-                  eventTitle: event.actName,
-                  eventStartDate: toISODateTime(event.startTime),
-                  eventEndDate: toISODateTime(event.endTime),
-                  eventLocation: event.address,
-                  eventUrl: event.website,
-                  imageUrl: imageUrl ?? undefined,
-                }}
-              />
+      {status === 'success' && cityEvents.length > 0 ? (
+        <>
+          {cityEvents.length > 1 ? (
+            <View style={styles.navRow}>
+              <Pressable
+                onPress={() => goToIndex(activeIndex - 1)}
+                disabled={activeIndex <= 0}
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.navBtn,
+                  activeIndex <= 0 && styles.navBtnDisabled,
+                  pressed && activeIndex > 0 && styles.pressed,
+                ]}
+              >
+                <Text style={styles.navBtnText}>‹ 上一則</Text>
+              </Pressable>
+              {positionLabel ? (
+                <Text style={styles.position}>{positionLabel}</Text>
+              ) : (
+                <View style={styles.positionSpacer} />
+              )}
+              <Pressable
+                onPress={() => goToIndex(activeIndex + 1)}
+                disabled={activeIndex >= cityEvents.length - 1}
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.navBtn,
+                  activeIndex >= cityEvents.length - 1 && styles.navBtnDisabled,
+                  pressed &&
+                    activeIndex < cityEvents.length - 1 &&
+                    styles.pressed,
+                ]}
+              >
+                <Text style={styles.navBtnText}>下一則 ›</Text>
+              </Pressable>
             </View>
-          </View>
-
-          {city ? <Text style={styles.cityLabel}>{city}</Text> : null}
-
-          <Text style={styles.title}>{event.actName}</Text>
-          <Text style={styles.meta}>
-            {formatEventDateRange(event.startTime, event.endTime)}
-          </Text>
-          <Text style={styles.meta}>{event.address || event.cityName}</Text>
-
-          {event.description ? (
-            <Text style={styles.description}>{event.description}</Text>
+          ) : positionLabel ? (
+            <Text style={styles.positionSolo}>{positionLabel}</Text>
           ) : null}
 
-          {event.website ? (
-            <Pressable
-              style={({ pressed }) => [
-                styles.linkButton,
-                pressed && styles.linkPressed,
-              ]}
-              onPress={() => Linking.openURL(event.website)}
-            >
-              <Text style={styles.linkText}>造訪官網 →</Text>
-            </Pressable>
-          ) : null}
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.linkButton,
-              pressed && styles.linkPressed,
-            ]}
-            onPress={() => {
-              const url = getEventShareUrl(event.id);
-              void Share.share({
-                title: event.actName,
-                message:
-                  Platform.OS === 'android'
-                    ? `${event.actName}\n${url}`
-                    : event.actName,
-                url,
+          <FlatList
+            ref={listRef}
+            data={cityEvents}
+            keyExtractor={(item) => item.id}
+            key={cityLabel || 'peers'}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            initialScrollIndex={
+              activeIndex >= 0 && activeIndex < cityEvents.length
+                ? activeIndex
+                : 0
+            }
+            getItemLayout={(_, index) => ({
+              length: width,
+              offset: width * index,
+              index,
+            })}
+            onScrollToIndexFailed={(info) => {
+              requestAnimationFrame(() => {
+                listRef.current?.scrollToIndex({
+                  index: info.index,
+                  animated: false,
+                });
               });
             }}
-          >
-            <Text style={styles.linkText}>分享活動</Text>
-          </Pressable>
-        </ScrollView>
-      )}
+            renderItem={({ item }) => (
+              <EventDetailSlide event={item} width={width} />
+            )}
+            onMomentumScrollEnd={onMomentumScrollEnd}
+          />
+        </>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -190,7 +275,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: space.xl,
     paddingTop: space.lg,
-    paddingBottom: space.lg,
+    paddingBottom: space.md,
   },
   heading: {
     fontSize: type.heading,
@@ -198,67 +283,56 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: colors.text,
   },
-  content: {
-    paddingHorizontal: space.xl,
-    paddingBottom: space.xxxl,
-    gap: space.md,
-  },
-  mediaFrame: {
-    position: 'relative',
-    borderRadius: radius.card,
-    overflow: 'hidden',
-    borderWidth: 3,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  heart: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    zIndex: 2,
-  },
-  image: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-    backgroundColor: colors.placeholder,
-  },
-  cityLabel: {
-    marginTop: space.sm,
-    fontSize: type.caption,
-    fontWeight: '700',
-    letterSpacing: 2,
-    color: colors.accentSoft,
-    textTransform: 'uppercase',
-  },
-  title: {
-    fontSize: type.title,
-    fontWeight: '700',
-    color: colors.text,
-    lineHeight: 30,
-  },
-  meta: {
-    fontSize: type.meta,
-    color: colors.textMuted,
-  },
-  description: {
-    marginTop: space.sm,
-    fontSize: type.body,
-    lineHeight: 24,
-    color: colors.text,
-  },
-  linkButton: {
-    marginTop: space.md,
-    alignSelf: 'flex-start',
-    paddingVertical: space.sm,
-  },
-  linkPressed: {
-    opacity: 0.7,
-  },
-  linkText: {
+  position: {
+    flex: 1,
     fontSize: type.meta,
     fontWeight: '600',
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingHorizontal: space.sm,
+  },
+  positionSpacer: {
+    flex: 1,
+  },
+  positionSolo: {
+    paddingHorizontal: space.xl,
+    paddingBottom: space.md,
+    fontSize: type.meta,
+    fontWeight: '600',
+    color: colors.textMuted,
+    textAlign: 'center',
+  },
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space.sm,
+    paddingHorizontal: space.xl,
+    paddingTop: space.xs,
+    paddingBottom: space.lg,
+  },
+  navBtn: {
+    minHeight: 44,
+    minWidth: 96,
+    paddingVertical: space.md,
+    paddingHorizontal: space.lg,
+    borderWidth: 2,
+    borderColor: colors.borderMuted,
+    borderRadius: 10,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navBtnDisabled: {
+    opacity: 0.35,
+  },
+  navBtnText: {
+    fontSize: type.body,
+    fontWeight: '700',
     color: colors.accentSoft,
-    letterSpacing: 0.5,
+  },
+  pressed: {
+    opacity: 0.85,
   },
   center: {
     flex: 1,

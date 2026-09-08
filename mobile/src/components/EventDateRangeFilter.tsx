@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import DatePickerField from '@/components/DatePickerField';
+import { COPY } from '@/content/copy';
 import { colors, radius, space, type } from '@/theme/tokens';
 import { parseFilterDateString } from '@/utils/formatDate';
 
@@ -33,22 +34,22 @@ export default function EventDateRangeFilter({
     <View style={styles.wrap}>
       <View style={styles.row}>
         <View style={styles.field}>
-          <Text style={styles.label}>開始日期</Text>
+          <Text style={styles.label}>{COPY.events.dateFrom}</Text>
           <DatePickerField
             value={from}
             onChange={onFromChange}
-            placeholder="選擇開始日期"
-            accessibilityLabel="選擇開始日期"
+            placeholder={COPY.events.dateFrom}
+            accessibilityLabel={COPY.events.dateFrom}
             maximumDate={parseFilterDateString(to) ?? undefined}
           />
         </View>
         <View style={styles.field}>
-          <Text style={styles.label}>結束日期</Text>
+          <Text style={styles.label}>{COPY.events.dateTo}</Text>
           <DatePickerField
             value={to}
             onChange={onToChange}
-            placeholder="選擇結束日期"
-            accessibilityLabel="選擇結束日期"
+            placeholder={COPY.events.dateTo}
+            accessibilityLabel={COPY.events.dateTo}
             minimumDate={minToDate}
           />
         </View>
@@ -64,7 +65,7 @@ export default function EventDateRangeFilter({
             disabled={confirmDisabled}
             onPress={onConfirm}
           >
-            <Text style={styles.confirmText}>確認日期</Text>
+            <Text style={styles.confirmText}>{COPY.events.dateConfirm}</Text>
           </Pressable>
         ) : null}
         {(from || to) && onClear ? (
@@ -72,7 +73,7 @@ export default function EventDateRangeFilter({
             style={({ pressed }) => [styles.clearBtn, pressed && styles.pressed]}
             onPress={onClear}
           >
-            <Text style={styles.clearText}>清除</Text>
+            <Text style={styles.clearText}>{COPY.events.clearDates}</Text>
           </Pressable>
         ) : null}
       </View>

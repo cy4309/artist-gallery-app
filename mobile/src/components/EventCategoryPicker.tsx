@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { COPY } from '@/content/copy';
 import { colors, radius, space, type } from '@/theme/tokens';
 import {
   ALL_EVENT_CATEGORY_IDS,
@@ -44,10 +45,9 @@ export default function EventCategoryPicker({
       <View style={styles.card}>
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.title}>選擇活動類型</Text>
-            <Text style={styles.hint}>
-              請勾選想看的類型（預設不選），確認後再選縣市
-            </Text>
+            <Text style={styles.step}>{COPY.categoryPicker.step}</Text>
+            <Text style={styles.title}>{COPY.categoryPicker.title}</Text>
+            <Text style={styles.hint}>{COPY.categoryPicker.hint}</Text>
           </View>
           {allowCancel && onCancel ? (
             <Pressable
@@ -66,17 +66,17 @@ export default function EventCategoryPicker({
             style={({ pressed }) => [styles.chipBtn, pressed && styles.pressed]}
             onPress={() => onChange([...ALL_EVENT_CATEGORY_IDS])}
           >
-            <Text style={styles.chipBtnText}>全選</Text>
+            <Text style={styles.chipBtnText}>{COPY.categoryPicker.selectAll}</Text>
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.chipBtn, pressed && styles.pressed]}
             onPress={() => onChange([])}
           >
-            <Text style={styles.chipBtnText}>清空</Text>
+            <Text style={styles.chipBtnText}>{COPY.categoryPicker.clearAll}</Text>
           </Pressable>
           <Text style={styles.count}>
             已選 {selected.length}/{ALL_EVENT_CATEGORY_IDS.length}
-            {allSelected ? '（全部）' : ''}
+            {allSelected ? COPY.categoryPicker.selectedAllSuffix : ''}
           </Text>
         </View>
 
@@ -117,10 +117,10 @@ export default function EventCategoryPicker({
         >
           <Text style={styles.confirmText}>
             {loading
-              ? '載入中…'
+              ? COPY.categoryPicker.loading
               : confirmLoadsData
-                ? '確認載入'
-                : '確認類型'}
+                ? COPY.categoryPicker.confirmLoad
+                : COPY.categoryPicker.confirm}
           </Text>
         </Pressable>
       </View>
@@ -153,6 +153,12 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
     gap: space.xs,
+  },
+  step: {
+    fontSize: type.caption,
+    fontWeight: '700',
+    letterSpacing: 2,
+    color: colors.accentSoft,
   },
   title: {
     fontSize: type.title,

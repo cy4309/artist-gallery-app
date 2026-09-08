@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/auth/AuthContext';
 import { fetchFavoriteList, FavoriteRecord } from '@/api/favorites';
 import FavoriteEventCard from '@/components/FavoriteEventCard';
+import { COPY } from '@/content/copy';
 import { colors, space, type } from '@/theme/tokens';
 import { isEventEnded, sortFavoritesLikeWeb } from '@/utils/favorites';
 import { eventRouteSegment, favoritesInclude } from '@/utils/eventId';
@@ -60,7 +61,9 @@ export default function FavoritesScreen() {
       <View style={styles.header}>
         <Text style={styles.heading}>收藏</Text>
         {status === 'success' && items.length > 0 ? (
-          <Text style={styles.hint}>進行中優先 · 已結束置底</Text>
+          <Text style={styles.hint}>
+            {COPY.favorites.sortedHint} · {COPY.favorites.hint}
+          </Text>
         ) : null}
       </View>
 

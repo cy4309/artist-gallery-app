@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import EventDateRangeFilter from '@/components/EventDateRangeFilter';
 import { useImeSafeInput } from '@/hooks/useImeSafeInput';
+import { COPY } from '@/content/copy';
 import { colors, radius, space, type } from '@/theme/tokens';
 
 type EventSearchTriggerProps = {
@@ -20,7 +21,7 @@ export function EventSearchTrigger({
       hitSlop={8}
       style={({ pressed }) => [styles.trigger, pressed && styles.pressed]}
       accessibilityRole="button"
-      accessibilityLabel={expanded ? '關閉搜尋' : '搜尋活動關鍵字'}
+      accessibilityLabel={expanded ? '關閉搜尋' : COPY.events.searchPlaceholder}
     >
       <Text style={styles.triggerIcon}>{expanded ? '✕' : '⌕'}</Text>
     </Pressable>
@@ -38,7 +39,7 @@ export function EventSearchInline({
   expanded,
   value,
   onChange,
-  placeholder = '搜尋活動關鍵字…',
+  placeholder = COPY.events.searchPlaceholder,
 }: EventSearchInlineProps) {
   const inputRef = useRef<TextInput>(null);
   const {
@@ -94,7 +95,7 @@ export function EventAdvancedSearchTrigger({
           (expanded || active) && styles.advancedTriggerActive,
         ]}
       >
-        進階篩選
+        {COPY.events.advancedSearch}
       </Text>
     </Pressable>
   );

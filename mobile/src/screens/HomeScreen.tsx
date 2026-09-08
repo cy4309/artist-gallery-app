@@ -93,12 +93,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   coverImage: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     width: '100%',
     height: '100%',
   },
   coverDim: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.42)',
   },
   foreground: {

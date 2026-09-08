@@ -1,0 +1,60 @@
+/** 對齊 frontend/src/locales/zh.ts — events / auth / interviews / favorites */
+export const COPY = {
+  auth: {
+    footerPrefix: '登入即表示你同意我們的',
+    privacy: '隱私權政策',
+    and: '與',
+    terms: '使用條款',
+  },
+  footer: {
+    privacy: '隱私權政策',
+    terms: '使用條款',
+  },
+  events: {
+    selectCityPlaceholder: '請選擇縣市…',
+    selectCityToBrowse: '選擇縣市開始瀏覽',
+    selectCityToBrowseHint:
+      '也可直接用上方放大鏡全台搜尋；會沿用已選的活動類型',
+    searchPlaceholder: '搜尋活動關鍵字…',
+    advancedSearch: '進階搜尋',
+    searchNoResults: '找不到符合的活動',
+    searchHint: '全台搜尋活動名稱、描述或地點，試試其他關鍵字',
+    dateFilterHint: '限縮目前所選縣市與類型；關鍵字則為全台搜尋',
+    dateConfirm: '確認篩選',
+    clearDates: '清除日期',
+    browseDateNoResults: '此縣市與日期區間內沒有活動',
+    browseNoResults: '目前沒有符合的活動',
+    browseNoResultsHint: '試試其他縣市或變更類型',
+    dateFrom: '開始日期',
+    dateTo: '結束日期',
+    changeType: '變更類型',
+    loading: '載入活動中…',
+    searching: '搜尋活動中…',
+    notFound: '找不到這個活動',
+    loadError: '載入失敗',
+    retry: '再試一次',
+    listPositionWithCity: '{city} · 第 {current} / {total} 筆',
+    visitWebsite: '造訪官網 →',
+    shareEvent: '分享活動',
+  },
+  categoryPicker: {
+    step: '步驟 1',
+    title: '活動類型',
+    hint: '請勾選想看的活動類型（預設不選），確認後再選擇縣市',
+    selectAll: '全選',
+    clearAll: '清空',
+    selectedAllSuffix: '（全部）',
+    confirm: '確認',
+    confirmLoad: '確認載入',
+    loading: '載入中…',
+  },
+  interviews: {
+    title: '專欄精選。',
+    description:
+      '這裡收錄我們精選的台灣文化人物與故事。不只是閱讀，而是一步步建立你的文化靈感地圖。',
+  },
+  favorites: {
+    sortedHint: '依收藏時間排序（新 → 舊）',
+    hint: '已結束活動排在最後',
+  },
+} as const;

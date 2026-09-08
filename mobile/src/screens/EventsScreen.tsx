@@ -26,6 +26,7 @@ import {
   EventSearchTrigger,
 } from '@/components/EventSearchBar';
 import ScrollToTopButton from '@/components/ScrollToTopButton';
+import { COPY } from '@/content/copy';
 import { colors, space, type } from '@/theme/tokens';
 import { OrgEvent } from '@/types/orgEvent';
 import { CITY_ORDER, displayCityName } from '@/utils/city';
@@ -204,16 +205,6 @@ export default function EventsScreen() {
     setAppliedDateTo(draftDateTo);
   };
 
-  const handleBackToCitySelect = () => {
-    setHasConfirmed(false);
-    setSelectedCity(NO_CITY_SELECTED);
-    setOrgData([]);
-    clearDateFilters();
-    setAdvancedOpen(false);
-    setShowScrollTop(false);
-    setErrorMessage('');
-  };
-
   const handleSelectCity = async (city: string) => {
     const categories = await resolveCategories();
     if (categories.length === 0) {
@@ -279,7 +270,7 @@ export default function EventsScreen() {
 
   const headerChangeCategories = (
     <Pressable onPress={handleChangeCategories} hitSlop={8}>
-      <Text style={styles.changeType}>變更類型</Text>
+      <Text style={styles.changeType}>{COPY.events.changeType}</Text>
     </Pressable>
   );
 
@@ -304,9 +295,7 @@ export default function EventsScreen() {
 
   const keywordSearchHint =
     keywordOpen && !hasKeyword ? (
-      <Text style={styles.searchHint}>
-        輸入關鍵字搜尋全站活動；與縣市瀏覽互斥
-      </Text>
+      <Text style={styles.searchHint}>{COPY.events.searchHint}</Text>
     ) : null;
 
   const renderEventList = () => (
@@ -366,18 +355,20 @@ export default function EventsScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <StatusBar style="light" />
-        {renderInlineLoading('載入活動中…')}
+        {renderInlineLoading(COPY.events.loading)}
       </SafeAreaView>
     );
   }
 
-  // 縣市列表模式：獨立 header（返回 + 進階篩選）
+  // 縣市列表模式：進階搜尋（返回用頂部 AccountBar）
   if (showCityBrowse) {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <StatusBar style="light" />
         <View style={styles.header}>
-          <BackButton onPress={handleBackToCitySelect} />
+          <Text style={styles.heading} numberOfLines={1}>
+            {cityLabel}
+          </Text>
           <View style={styles.headerRight}>
             {headerChangeCategories}
             <EventAdvancedSearchTrigger
@@ -398,7 +389,7 @@ export default function EventsScreen() {
           onConfirmDates={handleConfirmDates}
           confirmDatesDisabled={!dateDraftDirty}
           onClearDates={clearDateFilters}
-          dateHint={`${cityLabel} · 篩選與活動期間重疊的項目`}
+          dateHint={`${cityLabel} · ${COPY.events.dateFilterHint}`}
         />
 
         {errorMessage ? (
@@ -416,9 +407,9 @@ export default function EventsScreen() {
 
         {!errorMessage && orgData.length === 0 ? (
           <View style={styles.center}>
-            <Text style={styles.errorTitle}>目前沒有符合的活動</Text>
+            <Text style={styles.errorTitle}>{COPY.events.browseNoResults}</Text>
             <Text style={styles.centerText}>
-              {cityLabel} · 試試其他縣市或變更類型
+              {cityLabel} · {COPY.events.browseNoResultsHint}
             </Text>
           </View>
         ) : null}
@@ -428,8 +419,10 @@ export default function EventsScreen() {
         listEvents.length === 0 &&
         hasDateFilter ? (
           <View style={styles.center}>
-            <Text style={styles.errorTitle}>沒有符合日期的活動</Text>
-            <Text style={styles.centerText}>試試調整日期區間或清除篩選</Text>
+            <Text style={styles.errorTitle}>
+              {COPY.events.browseDateNoResults}
+            </Text>
+            <Text style={styles.centerText}>{COPY.events.dateFilterHint}</Text>
           </View>
         ) : null}
 
@@ -461,11 +454,11 @@ export default function EventsScreen() {
 
       {hasKeyword ? (
         catalogLoading && !catalogReady ? (
-          renderInlineLoading('搜尋活動中…')
+          renderInlineLoading(COPY.events.searching)
         ) : listEvents.length === 0 ? (
           <View style={styles.center}>
-            <Text style={styles.promptTitle}>找不到符合的活動</Text>
-            <Text style={styles.centerText}>試試其他關鍵字</Text>
+            <Text style={styles.promptTitle}>{COPY.events.searchNoResults}</Text>
+            <Text style={styles.centerText}>{COPY.events.searchHint}</Text>
           </View>
         ) : (
           renderEventList()
@@ -476,12 +469,14 @@ export default function EventsScreen() {
             cities={cities}
             selected={selectedCity}
             onSelect={handleSelectCity}
-            placeholder="請選擇縣市…"
+            placeholder={COPY.events.selectCityPlaceholder}
           />
           <View style={styles.center}>
-            <Text style={styles.promptTitle}>請選擇縣市開始瀏覽</Text>
+            <Text style={styles.promptTitle}>
+              {COPY.events.selectCityToBrowse}
+            </Text>
             <Text style={styles.centerText}>
-              也可直接點放大鏡搜尋全站活動；請先確認活動類型再選縣市
+              {COPY.events.selectCityToBrowseHint}
             </Text>
           </View>
         </>
@@ -526,7 +521,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 2,
     color: colors.text,
-    flexShrink: 0,
+    flexShrink: 1,
+    minWidth: 0,
+    marginRight: space.sm,
   },
   headerRight: {
     flexDirection: 'row',
