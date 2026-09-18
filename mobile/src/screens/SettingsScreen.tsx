@@ -28,6 +28,7 @@ import {
 } from "@/notifications/prefs";
 import { registerForPushNotificationsAsync } from "@/notifications/registerForPush";
 import { colors, radius, space, type } from "@/theme/tokens";
+import { getAppVersionLabel } from "@/utils/appVersion";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -307,6 +308,8 @@ export default function SettingsScreen() {
           ) : null}
         </View>
       ) : null}
+
+      <Text style={styles.version}>{getAppVersionLabel()}</Text>
     </SafeAreaView>
   );
 }
@@ -426,5 +429,14 @@ const styles = StyleSheet.create({
     fontSize: type.meta,
     color: colors.danger,
     lineHeight: 20,
+  },
+  version: {
+    marginTop: "auto",
+    paddingHorizontal: space.xl,
+    paddingBottom: space.xxl,
+    fontSize: type.caption,
+    color: colors.textDim,
+    textAlign: "center",
+    letterSpacing: 1,
   },
 });

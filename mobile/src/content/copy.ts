@@ -49,7 +49,7 @@ export const COPY = {
     loading: '載入中…',
   },
   interviews: {
-    title: '專欄精選。',
+    title: '專欄',
     description:
       '這裡收錄我們精選的台灣文化人物與故事。不只是閱讀，而是一步步建立你的文化靈感地圖。',
   },

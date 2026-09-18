@@ -21,10 +21,7 @@ export default function InterviewsScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <View style={styles.headerText}>
-          <Text style={styles.heading}>{COPY.interviews.title}</Text>
-          <Text style={styles.lede}>{COPY.interviews.description}</Text>
-        </View>
+        <Text style={styles.heading}>{COPY.interviews.title}</Text>
         <Text style={styles.count}>{people.length} 筆</Text>
       </View>
 
@@ -62,16 +59,12 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: space.xl,
     paddingTop: space.lg,
     paddingBottom: space.lg,
     gap: space.md,
-  },
-  headerText: {
-    flex: 1,
-    gap: space.sm,
   },
   heading: {
     fontSize: type.heading,
@@ -79,15 +72,9 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: colors.text,
   },
-  lede: {
-    fontSize: type.meta,
-    lineHeight: 20,
-    color: colors.textMuted,
-  },
   count: {
     fontSize: type.meta,
     color: colors.textMuted,
-    paddingTop: 4,
   },
   list: {
     paddingHorizontal: space.xl,
